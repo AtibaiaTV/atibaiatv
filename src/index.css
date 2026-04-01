@@ -1,0 +1,42 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue:        #4a6fa5;
+  --blue-dark:   #2d5282;
+  --blue-light:  #eef3fa;
+  --green:       #5aab3a;
+  --green-dark:  #3d7a25;
+  --green-light: #edf7e8;
+  --red:         #c0392b;
+  --text:        #1a1a2e;
+  --muted:       #6b7280;
+  --border:      #e5e7eb;
+  --surface:     #f9fafb;
+  --white:       #ffffff;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #fff;
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+button { font-family: inherit; cursor: pointer; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #c4c9d4; }
+
+/* Animações globais */
+@keyframes atv-blink   { 0%,100%{opacity:1}   50%{opacity:.3} }
+@keyframes atv-fade-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+@keyframes atv-ticker  { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+/* Utilitários */
+.atv-animate { animation: atv-fade-in .35s ease both; }
