@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { CATEGORIES } from '../data'
 import useArticles from '../hooks/useArticles'
-import NewsCard from '../components/NewsCard'
+import NewsCard from './NewsCard'
 
 export default function NewsFeed() {
   const [active, setActive] = useState('Todos')
@@ -12,42 +12,33 @@ export default function NewsFeed() {
 
   return (
     <section>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.25rem' }}>
-        <span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#4a6fa5', whiteSpace: 'nowrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1rem' }}>
+        <h2 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#Cd0000', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0, whiteSpace: 'nowrap' }}>
           Ultimas noticias
-        </span>
+        </h2>
         <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: '1rem', flexWrap: 'wrap' }}>
         {CATEGORIES.map(cat => (
           <button key={cat} onClick={() => setActive(cat)} style={{
-            padding: '5px 14px', borderRadius: 20, fontSize: '0.77rem', fontWeight: 500,
+            padding: '5px 14px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 500,
             cursor: 'pointer', border: '1px solid',
-            borderColor: active === cat ? '#4a6fa5' : '#e5e7eb',
-            background: active === cat ? '#4a6fa5' : '#fff',
-            color: active === cat ? '#fff' : '#6b7280', transition: 'all .2s',
+            borderColor: active === cat ? '#Cd0000' : '#e5e7eb',
+            background: active === cat ? '#Cd0000' : '#fff',
+            color: active === cat ? '#fff' : '#6b7280', transition: 'all .15s',
           }}>{cat}</button>
         ))}
       </div>
 
-      {/* Grid */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>Carregando...</div>
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af' }}>Carregando...</div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>Nenhuma noticia nessa categoria.</div>
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af' }}>Nenhuma noticia nessa categoria.</div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: rest.length > 0 ? '2fr 1fr' : '1fr',
-          gap: '1px', background: '#e5e7eb',
-          border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden',
-        }}>
-          <div style={{ gridRow: rest.length > 0 ? 'span 2' : 'auto' }}>
-            <NewsCard news={featured} featured={true} />
-          </div>
-          {rest.slice(0, 4).map(n => <NewsCard key={n.id} news={n} />)}
+        <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+          {featured && <NewsCard news={featured} featured={true} />}
+          {rest.map(n => <NewsCard key={n.id} news={n} />)}
         </div>
       )}
     </section>
