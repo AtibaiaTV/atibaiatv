@@ -11,7 +11,7 @@ export default function AoVivo() {
     <>
       {/* Banner topo */}
       <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'center', padding: '10px 2rem' }}>
-        <AdBanner type="billboard" />
+        <AdBanner type="billboard" src="/banners/prefeitura-abril26/billboard.gif" />
       </div>
 
       {/* Cabeçalho */}
@@ -70,7 +70,7 @@ export default function AoVivo() {
 
           {/* Banner após player */}
           <div style={{ marginTop: '1.5rem' }}>
-            <AdBanner type="leaderboard" />
+            <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
           </div>
         </div>
 
@@ -129,7 +129,7 @@ export default function AoVivo() {
           )}
 
           {/* Banner lateral */}
-          <AdBanner type="square" />
+          <AdBanner type="square" src="/banners/prefeitura-abril26/square.gif" />
         </div>
       </div>
     </>

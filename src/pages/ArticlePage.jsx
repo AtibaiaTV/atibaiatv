@@ -35,7 +35,7 @@ export default function ArticlePage() {
     <>
       {/* Banner topo */}
       <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'center', padding: '10px 2rem' }}>
-        <AdBanner type="billboard" />
+        <AdBanner type="billboard" src="/banners/prefeitura-abril26/billboard.gif" />
       </div>
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem' }}>
@@ -114,7 +114,7 @@ export default function ArticlePage() {
 
           {/* Banner no meio */}
           <div style={{ margin: '2rem 0' }}>
-            <AdBanner type="leaderboard" />
+            <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
           </div>
 
           {/* Relacionadas */}
@@ -133,7 +133,7 @@ export default function ArticlePage() {
 
         {/* Sidebar */}
         <aside style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <AdBanner type="square" />
+          <AdBanner type="square" src="/banners/prefeitura-abril26/square.gif" />
 
           {/* Vídeos */}
           <div>
@@ -145,7 +145,7 @@ export default function ArticlePage() {
             </div>
           </div>
 
-          <AdBanner type="square" />
+          <AdBanner type="square" src="/banners/prefeitura-abril26/square.gif" />
         </aside>
       </div>
     </>

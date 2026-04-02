@@ -28,7 +28,7 @@ export default function CategoryPage() {
   return (
     <>
       <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'center', padding: '10px 2rem' }}>
-        <AdBanner type="billboard" />
+        <AdBanner type="billboard" src="/banners/prefeitura-abril26/billboard.gif" />
       </div>
 
       <div style={{ background: editoria?.bg || 'var(--blue-light)', borderBottom: '1px solid var(--border)', padding: '1.5rem 2rem' }}>
@@ -70,7 +70,7 @@ export default function CategoryPage() {
               )}
             </>
           )}
-          <div style={{ marginTop: '1.5rem' }}><AdBanner type="leaderboard" /></div>
+          <div style={{ marginTop: '1.5rem' }}><AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" /></div>
           {otherNews.length > 0 && (
             <div style={{ marginTop: '2rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1rem' }}>
@@ -85,7 +85,7 @@ export default function CategoryPage() {
         </div>
 
         <aside style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <AdBanner type="square" />
+          <AdBanner type="square" src="/banners/prefeitura-abril26/square.gif" />
           <div>
             <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--blue)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
               Vídeos recentes <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
@@ -94,7 +94,7 @@ export default function CategoryPage() {
               {RECENT_VIDEOS.slice(0, 3).map(v => <VideoCard key={v.id} video={v} />)}
             </div>
           </div>
-          <AdBanner type="square" />
+          <AdBanner type="square" src="/banners/prefeitura-abril26/square.gif" />
           <div>
             <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--blue)', marginBottom: 12 }}>Editorias</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

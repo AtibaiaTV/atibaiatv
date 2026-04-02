@@ -11,7 +11,7 @@ export default function Home() {
     <>
       {/* ── BANNER TOPO BILLBOARD 1920×200 ── */}
       <div style={{ padding: '10px 2rem', background: '#f9fafb', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'center' }}>
-        <AdBanner type="billboard" />
+        <AdBanner type="billboard" src="/banners/prefeitura-abril26/billboard.gif" />
       </div>
 
       {/* ── HERO: player + sidebar ── */}
@@ -22,7 +22,7 @@ export default function Home() {
 
       {/* ── BANNER LEADERBOARD 1200×300 ── */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '1.5rem 2rem', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-        <AdBanner type="leaderboard" />
+        <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
       </div>
 
       {/* ── EDITORIAS ── */}
@@ -46,7 +46,7 @@ export default function Home() {
         <aside>
           {/* Banner 300×300 */}
           <div style={{ marginBottom: '1.5rem' }}>
-            <AdBanner type="square" />
+            <AdBanner type="square" src="/banners/prefeitura-abril26/square.gif" />
           </div>
 
           {/* Vídeos recentes */}
@@ -62,14 +62,14 @@ export default function Home() {
 
           {/* Segundo banner 300×300 */}
           <div style={{ marginTop: '1.5rem' }}>
-            <AdBanner type="square" />
+            <AdBanner type="square" src="/banners/prefeitura-abril26/square.gif" />
           </div>
         </aside>
       </div>
 
       {/* ── BANNER LEADERBOARD RODAPÉ ── */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 2rem 2rem', background: '#f9fafb', borderTop: '1px solid #e5e7eb' }}>
-        <AdBanner type="leaderboard" />
+        <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
       </div>
     </>
   )

@@ -8,13 +8,14 @@
  *   'video'      → miniatura de vídeo patrocinado
  *
  * Para ativar uma peça real, passe a prop `src` com a URL da imagem/iframe.
+ * Para vídeo, passe `video` com a URL do arquivo de vídeo.
  */
 
 const SIZES = {
   billboard: {
     width: '100%',
     maxWidth: 1920,
-    height: 100, // renderizado em 100px para não ocupar tela toda no layout
+    height: 100,
     label: 'Publicidade · 1920×200px',
     ratio: '1920/200',
   },
@@ -39,7 +40,7 @@ const SIZES = {
   },
 }
 
-export default function AdBanner({ type = 'leaderboard', src = null, href = '#', style: extraStyle = {} }) {
+export default function AdBanner({ type = 'leaderboard', src = null, video = null, href = '#', style: extraStyle = {} }) {
   const size = SIZES[type] || SIZES.leaderboard
 
   const containerStyle = {
@@ -71,7 +72,30 @@ export default function AdBanner({ type = 'leaderboard', src = null, href = '#',
     pointerEvents: 'none',
   }
 
-  // Se src fornecido, renderiza a peça real
+  // Se video fornecido, renderiza o vídeo
+  if (video) {
+    return (
+      <div style={{ ...containerStyle, background: '#000', border: 'none', height: 'auto', aspectRatio: type === 'square' ? '1/1' : '16/9' }}>
+        <video
+          src={video}
+          autoPlay
+          muted
+          loop
+          playsInline
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+        <span style={{
+          position: 'absolute', top: 6, right: 8,
+          fontSize: '0.55rem', color: 'rgba(255,255,255,0.7)',
+          fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase',
+        }}>
+          Publicidade
+        </span>
+      </div>
+    )
+  }
+
+  // Se src fornecido, renderiza a peça real (imagem)
   if (src) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer sponsored" style={{ ...containerStyle, background: 'transparent', border: 'none' }}>
@@ -84,7 +108,6 @@ export default function AdBanner({ type = 'leaderboard', src = null, href = '#',
   return (
     <div style={containerStyle}>
       <div style={labelStyle}>
-        {/* Ícone */}
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5">
           <rect x="2" y="4" width="20" height="16" rx="2"/>
           <path d="M8 12h8M12 8v8" strokeLinecap="round"/>
@@ -97,7 +120,6 @@ export default function AdBanner({ type = 'leaderboard', src = null, href = '#',
         </span>
       </div>
 
-      {/* Badge canto */}
       <span style={{
         position: 'absolute', top: 6, right: 8,
         fontSize: '0.55rem', color: '#b0b7c3',
