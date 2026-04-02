@@ -1,57 +1,45 @@
+import useTicker from '../hooks/useTicker'
 import { TICKER_ITEMS } from '../data'
 
-const style = {
-  ticker: {
-    background: '#e8f4fd',
-    borderBottom: '1px solid #c8def0',
-    height: 34,
-    display: 'flex',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  label: {
-    background: '#1a6fa8',
-    color: '#fff',
-    fontSize: '0.65rem',
-    fontWeight: 700,
-    letterSpacing: '0.1em',
-    textTransform: 'uppercase',
-    padding: '0 14px',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-  scroll: { overflow: 'hidden', flex: 1 },
-}
-
-// CSS animation injected once
-const css = `
-@keyframes atv-ticker { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
-.atv-ticker-track { display: flex; animation: atv-ticker 32s linear infinite; white-space: nowrap; }
-.atv-ticker-item { font-size: 0.78rem; color: #1a6fa8; font-weight: 500; padding: 0 32px; }
-`
-
 export default function Ticker() {
-  // Duplicate items for seamless loop
-  const items = [...TICKER_ITEMS, ...TICKER_ITEMS]
+  const { items: firestoreItems, loading } = useTicker()
+  const items = loading ? TICKER_ITEMS : (firestoreItems.length > 0 ? firestoreItems : TICKER_ITEMS)
+  const doubled = [...items, ...items]
 
   return (
-    <>
-      <style>{css}</style>
-      <div style={style.ticker}>
-        <div style={style.label}>Últimas</div>
-        <div style={style.scroll}>
-          <div className="atv-ticker-track">
-            {items.map((item, i) => (
-              <span key={i} className="atv-ticker-item">
-                {item}
-                {i < items.length - 1 && <span style={{ opacity: 0.3, paddingLeft: 32 }}>·</span>}
-              </span>
-            ))}
-          </div>
-        </div>
+    <div style={{
+      background: 'linear-gradient(90deg, #c0392b, #e74c3c)',
+      color: '#fff',
+      overflow: 'hidden',
+      fontSize: '0.82rem',
+      fontWeight: 500,
+      position: 'relative',
+      height: 36,
+      display: 'flex',
+      alignItems: 'center',
+    }}>
+      <span style={{
+        position: 'absolute', left: 0, top: 0, bottom: 0,
+        display: 'flex', alignItems: 'center',
+        background: '#a93226', padding: '0 14px',
+        fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+        zIndex: 2,
+        boxShadow: '4px 0 8px rgba(0,0,0,.15)',
+      }}>
+        Ultimas
+      </span>
+      <div style={{
+        display: 'flex', whiteSpace: 'nowrap',
+        animation: 'atv-ticker 40s linear infinite',
+        paddingLeft: 100,
+      }}>
+        {doubled.map((item, i) => (
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 18, paddingRight: 40 }}>
+            <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,.5)', flexShrink: 0 }} />
+            {item}
+          </span>
+        ))}
       </div>
-    </>
+    </div>
   )
 }

@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { CATEGORIES, NEWS } from '../data'
+import { CATEGORIES } from '../data'
+import useArticles from '../hooks/useArticles'
 import NewsCard from '../components/NewsCard'
 
 export default function NewsFeed() {
   const [active, setActive] = useState('Todos')
-  const filtered = active === 'Todos' ? NEWS : NEWS.filter(n => n.category === active)
+  const { articles, loading } = useArticles()
+  const filtered = active === 'Todos' ? articles : articles.filter(n => n.category === active)
   const featured = filtered[0]
   const rest = filtered.slice(1)
 
@@ -12,13 +14,9 @@ export default function NewsFeed() {
     <section>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.25rem' }}>
         <span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#4a6fa5', whiteSpace: 'nowrap' }}>
-          Últimas notícias
+          Ultimas noticias
         </span>
         <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
-        <a href="#" style={{ fontSize: '0.78rem', color: '#6b7280', whiteSpace: 'nowrap' }}
-          onMouseEnter={e => e.target.style.color = '#4a6fa5'}
-          onMouseLeave={e => e.target.style.color = '#6b7280'}
-        >Ver todas →</a>
       </div>
 
       {/* Tabs */}
@@ -35,8 +33,10 @@ export default function NewsFeed() {
       </div>
 
       {/* Grid */}
-      {filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>Nenhuma notícia nessa categoria.</div>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>Carregando...</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>Nenhuma noticia nessa categoria.</div>
       ) : (
         <div style={{
           display: 'grid',

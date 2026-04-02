@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import LivePlayer from '../components/LivePlayer'
 import AdBanner from '../components/AdBanner'
+import { trackPageView } from '../hooks/usePageViews'
 import { SCHEDULE, RECENT_VIDEOS } from '../data'
 import VideoCard from '../components/VideoCard'
 
 export default function AoVivo() {
   const [activeTab, setActiveTab] = useState('grade')
 
+  useEffect(() => { trackPageView("ao-vivo") }, [])
   return (
     <>
       {/* Banner topo */}
