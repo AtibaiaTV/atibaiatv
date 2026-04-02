@@ -29,14 +29,14 @@ export default function Home() {
   return (
     <>
       {/* BANNER TOPO */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 2rem', background: '#f4f5f7', borderBottom: '1px solid #e5e7eb' }}>
+      <div className="atv-banner-wrap" style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderBottom: '1px solid #e5e7eb' }}>
         <AdBanner type="billboard" src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'} />
       </div>
 
-      {/* HERO: destaque + lateral */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '1.5rem 2rem' }}>
+      {/* HERO */}
+      <div className="atv-container" style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
         {!loading && featured && (
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2px', background: '#e5e7eb', borderRadius: 12, overflow: 'hidden', marginBottom: '1.5rem' }}>
+          <div className="atv-grid-hero" style={{ background: '#e5e7eb', borderRadius: 12, overflow: 'hidden', marginBottom: '1.5rem' }}>
             <div style={{ gridRow: 'span 3' }}>
               <NewsCard news={featured} featured={true} />
             </div>
@@ -45,14 +45,13 @@ export default function Home() {
             ))}
           </div>
         )}
-
         {loading && (
           <div style={{ textAlign: 'center', padding: '4rem', color: '#9ca3af' }}>Carregando noticias...</div>
         )}
       </div>
 
       {/* BANNER LEADERBOARD */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 2rem', background: '#f4f5f7', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
+      <div className="atv-banner-wrap" style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
         {leaderboard && leaderboard.mediaType === 'video' ? (
           <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
         ) : (
@@ -60,10 +59,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* CONTEUDO PRINCIPAL + SIDEBAR */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2.5rem' }}>
-
-        {/* Coluna principal */}
+      {/* CONTEUDO + SIDEBAR */}
+      <div className="atv-container atv-grid-main" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div>
           {/* Editorias */}
           <div style={{ marginBottom: '2rem' }}>
@@ -71,7 +68,7 @@ export default function Home() {
               <h2 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#Cd0000', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Editorias</h2>
               <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+            <div className="atv-grid-editorias">
               {EDITORIAS.map(ed => <EditoriaCard key={ed.slug} editoria={ed} />)}
             </div>
           </div>
@@ -93,7 +90,6 @@ export default function Home() {
 
         {/* Sidebar */}
         <aside>
-          {/* Ao Vivo */}
           <div style={{ marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem' }}>
               <div style={{ width: 8, height: 8, background: '#Cd0000', borderRadius: '50%', animation: 'atv-blink 1.2s ease-in-out infinite' }} />
@@ -104,12 +100,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Banner square */}
           <div style={{ marginBottom: '1.5rem' }}>
             <AdBanner type="square" src={square ? square.mediaUrl : '/banners/prefeitura-abril26/square.gif'} />
           </div>
 
-          {/* Videos recentes */}
           <div style={{ marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '0.75rem' }}>
               <h3 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1a2e', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Videos recentes</h3>
@@ -120,15 +114,12 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Segundo banner */}
-          <div>
-            <AdBanner type="square" src={square ? square.mediaUrl : '/banners/prefeitura-abril26/square.gif'} />
-          </div>
+          <AdBanner type="square" src={square ? square.mediaUrl : '/banners/prefeitura-abril26/square.gif'} />
         </aside>
       </div>
 
       {/* BANNER RODAPE */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '1.5rem 2rem', background: '#f4f5f7', borderTop: '1px solid #e5e7eb' }}>
+      <div className="atv-banner-wrap" style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderTop: '1px solid #e5e7eb' }}>
         {leaderboard && leaderboard.mediaType === 'video' ? (
           <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
         ) : (
