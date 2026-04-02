@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Logo from './Logo'
+import { CONTATO } from '../data'
 
 const LINKS = [
   ['Início', '/'], ['Notícias', '/noticias'], ['Cultura', '/cultura'],
@@ -25,9 +26,9 @@ export default function Footer() {
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
               {[
-                { label: 'YT', href: 'https://youtube.com' },
-                { label: 'IG', href: 'https://instagram.com' },
-                { label: 'FB', href: 'https://facebook.com' },
+                { label: 'YT', href: CONTATO.youtube },
+                { label: 'IG', href: CONTATO.instagram },
+                { label: 'FB', href: CONTATO.facebook },
               ].map(({ label, href }) => (
                 <a key={label} href={href} target="_blank" rel="noreferrer" style={{
                   width: 32, height: 32, borderRadius: '50%',
@@ -58,23 +59,24 @@ export default function Footer() {
           <div>
             <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,.4)', marginBottom: 14 }}>Contato</div>
             {[
-              { icon: '📧', text: 'contato@atibaiatv.com.br' },
-              { icon: '📞', text: '(11) 4400-0000' },
-              { icon: '📍', text: 'Atibaia, SP — Brasil' },
-            ].map(({ icon, text }) => (
-              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: '0.82rem', color: 'rgba(255,255,255,.65)' }}>
-                <span style={{ fontSize: 14 }}>{icon}</span>{text}
+              { icon: '📧', text: CONTATO.emailRedacao, href: `mailto:${CONTATO.emailRedacao}` },
+              { icon: '📞', text: CONTATO.telefone, href: `tel:+55${CONTATO.telefone.replace(/\D/g,'')}` },
+              { icon: '📍', text: CONTATO.endereco },
+            ].map(({ icon, text, href }) => (
+              <div key={text} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10, fontSize: '0.78rem', color: 'rgba(255,255,255,.65)' }}>
+                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+                {href ? <a href={href} style={{ color: 'rgba(255,255,255,.65)', transition: 'color .2s' }} onMouseEnter={e => e.target.style.color='#fff'} onMouseLeave={e => e.target.style.color='rgba(255,255,255,.65)'}>{text}</a> : <span>{text}</span>}
               </div>
             ))}
             <div style={{ marginTop: 16 }}>
-              <a href="/anuncie" style={{
-                display: 'inline-block', background: '#5aab3a', color: '#fff',
+              <Link to="/anuncie" style={{
+                display: 'inline-block', background: '#67AA4D', color: '#fff',
                 fontSize: '0.78rem', fontWeight: 600, padding: '8px 18px', borderRadius: 6,
                 transition: 'background .2s',
               }}
-              onMouseEnter={e => e.currentTarget.style.background = '#3d7a25'}
-              onMouseLeave={e => e.currentTarget.style.background = '#5aab3a'}
-              >Anuncie aqui</a>
+              onMouseEnter={e => e.currentTarget.style.background = '#4a7a35'}
+              onMouseLeave={e => e.currentTarget.style.background = '#67AA4D'}
+              >Anuncie aqui</Link>
             </div>
           </div>
         </div>

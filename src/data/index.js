@@ -1,12 +1,12 @@
-// ─── CORES BASEADAS NOS LOGOS REAIS ──────────────────────────────────────────
+// ─── CORES ATUALIZADAS ────────────────────────────────────────────────────────
 export const COLORS = {
-  blue:       '#4a6fa5',   // "Atibaia" no logo horizontal
+  blue:       '#4971B1',
   blueDark:   '#2d5282',
   blueLight:  '#eef3fa',
-  green:      '#5aab3a',   // "TV" no logo horizontal
-  greenDark:  '#3d7a25',
+  green:      '#67AA4D',
+  greenDark:  '#4a7a35',
   greenLight: '#edf7e8',
-  red:        '#c0392b',   // badge ao vivo
+  red:        '#Cd0000',
   text:       '#1a1a2e',
   muted:      '#6b7280',
   border:     '#e5e7eb',
@@ -15,22 +15,24 @@ export const COLORS = {
 
 // ─── TICKER ───────────────────────────────────────────────────────────────────
 export const TICKER_ITEMS = [
-  'Prefeitura anuncia plano de revitalização do centro histórico com R$ 12 milhões',
-  'Festival de Orquídeas 2025 bate recorde com mais de 80 mil visitantes',
-  'Obras da nova ponte sobre o Rio Atibaia têm previsão de conclusão para março',
-  'Time de futsal conquista título estadual na categoria sub-17',
-  'Temperatura pode chegar a 38°C neste fim de semana em Atibaia, alerta Inmet',
-  'Atibaia é eleita entre as 10 melhores cidades do interior paulista para viver',
+  'Atibaia é a cidade mais segura do estado de São Paulo e 2ª mais segura do Brasil',
+  'PM prende quadrilha especializada em roubo de caminhões na região de Atibaia',
+  'Prefeitura abre consulta pública para reestruturar transporte coletivo da cidade',
+  'Atenção: incidentes na Rodovia Fernão Dias causam interdições no sentido norte',
+  'Mercado de trabalho aquecido: diversas vagas abertas em Atibaia neste mês',
+  'Secretaria de Mobilidade realiza oficinas presenciais para novo sistema de transporte',
 ]
 
 // ─── EDITORIAS ───────────────────────────────────────────────────────────────
 export const EDITORIAS = [
-  { slug: 'noticias',  label: 'Notícias',   icon: '📰', color: '#4a6fa5', bg: '#eef3fa', description: 'Tudo o que acontece em Atibaia e região' },
-  { slug: 'cultura',   label: 'Cultura',    icon: '🎭', color: '#8b44c2', bg: '#f3eafa', description: 'Arte, música, teatro e patrimônio local' },
-  { slug: 'eventos',   label: 'Eventos',    icon: '📅', color: '#5aab3a', bg: '#edf7e8', description: 'Agenda completa da cidade e região' },
-  { slug: 'esportes',  label: 'Esportes',   icon: '⚽', color: '#c47a00', bg: '#fff7e0', description: 'Esporte amador e profissional da região' },
-  { slug: 'turismo',   label: 'Turismo',    icon: '🏔️', color: '#1a8c7a', bg: '#e6f7f5', description: 'Serra de Atibaia, ecoturismo e destinos' },
-  { slug: 'economia',  label: 'Economia',   icon: '💼', color: '#c0392b', bg: '#faeaea', description: 'Negócios, empregos e desenvolvimento local' },
+  { slug: 'noticias',   label: 'Notícias',          icon: '📰', color: '#4971B1', bg: '#eef3fa', description: 'Tudo o que acontece em Atibaia e região' },
+  { slug: 'cultura',    label: 'Cultura',            icon: '🎭', color: '#8b44c2', bg: '#f3eafa', description: 'Arte, música, teatro e patrimônio local' },
+  { slug: 'eventos',    label: 'Eventos',            icon: '📅', color: '#67AA4D', bg: '#edf7e8', description: 'Agenda completa da cidade e região' },
+  { slug: 'esportes',   label: 'Esportes',           icon: '⚽', color: '#c47a00', bg: '#fff7e0', description: 'Esporte amador e profissional da região' },
+  { slug: 'turismo',    label: 'Turismo',            icon: '🏔️', color: '#1a8c7a', bg: '#e6f7f5', description: 'Serra de Atibaia, ecoturismo e destinos' },
+  { slug: 'economia',   label: 'Economia',           icon: '💼', color: '#Cd0000', bg: '#faeaea', description: 'Negócios, empregos e desenvolvimento local' },
+  { slug: 'seguranca',  label: 'Segurança Pública',  icon: '🛡️', color: '#1a6fa8', bg: '#e8f4fd', description: 'Segurança e ordem pública em Atibaia' },
+  { slug: 'mobilidade', label: 'Mobilidade',         icon: '🚌', color: '#7a5c00', bg: '#fff7e0', description: 'Trânsito, transporte e mobilidade urbana' },
 ]
 
 // ─── PROGRAMAÇÃO ─────────────────────────────────────────────────────────────
@@ -46,39 +48,91 @@ export const SCHEDULE = [
 ]
 
 // ─── CATEGORIAS ──────────────────────────────────────────────────────────────
-export const CATEGORIES = ['Todos', 'Notícias', 'Cultura', 'Eventos', 'Esportes', 'Turismo', 'Economia']
+export const CATEGORIES = ['Todos', 'Notícias', 'Segurança Pública', 'Mobilidade', 'Economia', 'Cultura', 'Eventos', 'Esportes']
 
 // ─── TAG STYLES ──────────────────────────────────────────────────────────────
 export const TAG_STYLES = {
-  Notícias:   { bg: '#eef3fa', color: '#4a6fa5' },
-  Cultura:    { bg: '#f3eafa', color: '#8b44c2' },
-  Eventos:    { bg: '#edf7e8', color: '#3d7a25' },
-  Esportes:   { bg: '#fff7e0', color: '#c47a00' },
-  Turismo:    { bg: '#e6f7f5', color: '#1a8c7a' },
-  Economia:   { bg: '#faeaea', color: '#c0392b' },
-  Variedades: { bg: '#fce4ec', color: '#b71c5b' },
+  'Notícias':         { bg: '#eef3fa', color: '#4971B1' },
+  'Cultura':          { bg: '#f3eafa', color: '#8b44c2' },
+  'Eventos':          { bg: '#edf7e8', color: '#4a7a35' },
+  'Esportes':         { bg: '#fff7e0', color: '#c47a00' },
+  'Turismo':          { bg: '#e6f7f5', color: '#1a8c7a' },
+  'Economia':         { bg: '#faeaea', color: '#Cd0000' },
+  'Segurança Pública':{ bg: '#e8f4fd', color: '#1a6fa8' },
+  'Mobilidade':       { bg: '#fff7e0', color: '#7a5c00' },
+  'Variedades':       { bg: '#fce4ec', color: '#b71c5b' },
+  'Atibaia em Foco':  { bg: '#eef3fa', color: '#4971B1' },
 }
 
 // ─── NOTÍCIAS ────────────────────────────────────────────────────────────────
 export const NEWS = [
-  { id: 1,  title: 'Prefeitura anuncia plano de revitalização do centro histórico com R$ 12 milhões em investimentos', category: 'Notícias',  author: 'Redação Atibaia TV', time: 'há 2 horas',  featured: true,  color: 'blue'   },
-  { id: 2,  title: 'Orquestra Municipal abre temporada 2025 com concerto gratuito na Praça Central',                  category: 'Cultura',   author: 'Redação Atibaia TV', time: 'há 4 horas',  featured: false, color: 'purple' },
-  { id: 3,  title: 'Feira de Artesanato e Gastronomia chega à 15ª edição neste sábado em Atibaia',                   category: 'Eventos',   author: 'Redação Atibaia TV', time: 'há 6 horas',  featured: false, color: 'green'  },
-  { id: 4,  title: 'Atibaia é eleita entre as 10 melhores cidades do interior paulista para se viver em 2025',       category: 'Notícias',  author: 'Redação Atibaia TV', time: 'Ontem',       featured: false, color: 'blue'   },
-  { id: 5,  title: 'Atibaia FC empata em 1 a 1 com Bragantino na Copa Regional Sub-20',                              category: 'Esportes',  author: 'Redação Atibaia TV', time: 'Ontem',       featured: false, color: 'orange' },
-  { id: 6,  title: 'Novo CEI inaugura na zona leste e amplia vagas para crianças de 0 a 3 anos',                     category: 'Notícias',  author: 'Redação Atibaia TV', time: 'há 2 dias',   featured: false, color: 'blue'   },
-  { id: 7,  title: 'Trilha das Orquídeas recebe recorde de visitantes neste verão na Serra de Atibaia',              category: 'Turismo',   author: 'Redação Atibaia TV', time: 'há 2 dias',   featured: false, color: 'teal'   },
-  { id: 8,  title: 'Mostra de cinema local exibe 12 curtas produzidos por realizadores de Atibaia',                  category: 'Cultura',   author: 'Redação Atibaia TV', time: 'há 2 dias',   featured: false, color: 'purple' },
-  { id: 9,  title: 'Maratona de Atibaia 2025 terá percurso renovado e inscrições abertas até fim do mês',            category: 'Esportes',  author: 'Redação Atibaia TV', time: 'há 3 dias',   featured: false, color: 'orange' },
-  { id: 10, title: 'Parque ecológico da zona norte tem projeto aprovado pela Câmara Municipal',                       category: 'Notícias',  author: 'Redação Atibaia TV', time: 'há 3 dias',   featured: false, color: 'blue'   },
-  { id: 11, title: 'Empresas de Atibaia geram 340 novos empregos no primeiro trimestre de 2025',                     category: 'Economia',  author: 'Redação Atibaia TV', time: 'há 4 dias',   featured: false, color: 'red'    },
-  { id: 12, title: 'Rota turística da Serra de Atibaia integra novo roteiro estadual de ecoturismo',                 category: 'Turismo',   author: 'Redação Atibaia TV', time: 'há 4 dias',   featured: false, color: 'teal'   },
+  {
+    id: 1,
+    title: 'Segurança Consolidada e Avanços na Mobilidade Marcam o Início de Abril',
+    category: 'Notícias',
+    author: 'Redação Atibaia TV',
+    time: 'há 1 hora',
+    featured: true,
+    color: 'blue',
+    body: 'Atibaia reafirma sua posição entre as cidades mais seguras de São Paulo enquanto a prefeitura convoca a população para reestruturar o transporte público. Na última semana, ações da Polícia Militar desarticularam quadrilhas de roubo de carga, e o monitoramento do trânsito segue atento às rodovias Fernão Dias e Dom Pedro I após registros recentes de incidentes com veículos pesados.',
+  },
+  {
+    id: 2,
+    title: 'Prisões e Reconhecimento Estadual: PM Desfaz Quadrilha de Roubo de Caminhões',
+    category: 'Segurança Pública',
+    author: 'Redação Atibaia TV',
+    time: 'há 3 horas',
+    featured: false,
+    color: 'blue',
+    body: 'A segurança continua sendo o principal pilar de Atibaia neste início de 2026. Recentemente, a Polícia Militar efetuou a prisão de uma quadrilha especializada em roubo de caminhões. Quatro criminosos foram detidos em flagrante após renderem um motorista sob ameaça de arma de fogo. A ação resultou na recuperação do veículo e na apreensão de bloqueadores de sinal e ferramentas de corte. Dados do Atlas da Violência apontam Atibaia como a cidade mais segura do estado de São Paulo e a 2ª mais segura do Brasil entre municípios de grande porte.',
+  },
+  {
+    id: 3,
+    title: 'Participação Popular e Trânsito nas Rodovias: Mobilidade em Foco',
+    category: 'Mobilidade',
+    author: 'Redação Atibaia TV',
+    time: 'há 5 horas',
+    featured: false,
+    color: 'orange',
+    body: 'Com uma frota que beira um veículo por habitante, a gestão municipal intensificou os esforços para otimizar o fluxo urbano. A Secretaria de Mobilidade Urbana está realizando oficinas presenciais e consultas públicas para a construção de um novo sistema de transporte coletivo. O objetivo é reestruturar linhas e melhorar a eficiência do serviço nos bairros mais populosos, como Caetetuba e Portão. Nas rodovias, incidentes recentes na Fernão Dias incluindo tombamentos de carretas causaram interdições parciais no sentido norte.',
+  },
+  {
+    id: 4,
+    title: 'Mercado de Trabalho Aquecido e Clima Estável Marcam a Semana em Atibaia',
+    category: 'Economia',
+    author: 'Redação Atibaia TV',
+    time: 'há 6 horas',
+    featured: false,
+    color: 'red',
+    body: 'No setor econômico, destaca-se um aquecimento no mercado de trabalho local, com diversas vagas de emprego abertas para funções administrativas e operacionais, como auxiliares de e-commerce e estoquistas. Para quem planeja atividades ao ar livre, o clima deve permanecer estável, com sol entre nuvens e sem previsão de chuvas intensas.',
+  },
+  {
+    id: 5,
+    title: 'Atibaia é a 2ª Cidade Mais Segura do Brasil entre Municípios de Grande Porte',
+    category: 'Segurança Pública',
+    author: 'Redação Atibaia TV',
+    time: 'Ontem',
+    featured: false,
+    color: 'blue',
+    body: 'Dados consolidados do Atlas da Violência e levantamentos municipais apontam Atibaia como a cidade mais segura do estado de São Paulo e a 2ª mais segura do Brasil entre municípios de grande porte. Bairros como Alvinópolis, Jardim do Lago e Vila Giglio mantêm baixos índices de criminalidade, sustentados pelo monitoramento eletrônico e patrulhamento tático.',
+  },
 ]
 
 // ─── VÍDEOS RECENTES ─────────────────────────────────────────────────────────
 export const RECENT_VIDEOS = [
-  { id: 'v1', title: 'Jornal da Tarde — Edição 01/04/2025', duration: '22:14', views: '1.2k', thumb: 'blue'   },
-  { id: 'v2', title: 'Festival de Orquídeas: cobertura especial', duration: '18:40', views: '3.4k', thumb: 'green'  },
-  { id: 'v3', title: 'Entrevista: prefeito fala sobre obras',       duration: '14:05', views: '980',  thumb: 'blue'   },
-  { id: 'v4', title: 'Esporte Total — Rodada do fim de semana',     duration: '26:30', views: '2.1k', thumb: 'orange' },
+  { id: 'v1', title: 'Jornal da Tarde — Edição Atibaia TV', duration: '22:14', views: '1.2k', thumb: 'blue'   },
+  { id: 'v2', title: 'PM prende quadrilha de roubo de caminhões', duration: '08:40', views: '3.4k', thumb: 'blue'  },
+  { id: 'v3', title: 'Consulta pública: novo transporte coletivo', duration: '14:05', views: '980',  thumb: 'orange' },
+  { id: 'v4', title: 'Atibaia: cidade mais segura de SP', duration: '12:30', views: '2.1k', thumb: 'green' },
 ]
+
+// ─── CONTATO ─────────────────────────────────────────────────────────────────
+export const CONTATO = {
+  endereco: 'Rua Padre Ernesto da Cunha Veloso, 151 - Atibaia Jardim, Atibaia/SP - CEP 12.942-240',
+  telefone: '(11) 97497-6540',
+  emailRedacao: 'atibaiatv2013@gmail.com',
+  emailComercial: 'atibaiatv2013@gmail.com',
+  instagram: 'https://www.instagram.com/atibaia_tv/',
+  facebook: 'https://www.facebook.com/AtibaiaTv/',
+  youtube: 'https://www.youtube.com/@REDESA_tv',
+}
