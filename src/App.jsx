@@ -5,7 +5,6 @@ import Ticker    from './components/Ticker'
 import Footer    from './components/Footer'
 import Home         from './pages/Home'
 import CategoryPage from './pages/CategoryPage'
-import AoVivo       from './pages/AoVivo'
 import ArticlePage  from './pages/ArticlePage'
 import { SobrePage, AnunciePage, ContatoPage } from './pages/StaticPages'
 
@@ -57,7 +56,6 @@ export default function App() {
         <Route path="/cidade"    element={<CategoryPage />} />
         <Route path="/zeladoria" element={<CategoryPage />} />
         <Route path="/alimentacao" element={<CategoryPage />} />
-        <Route path="/ao-vivo"    element={<AoVivo />} />
         <Route path="/artigo/:id" element={<ArticlePage />} />
         <Route path="/sobre"      element={<SobrePage />} />
         <Route path="/anuncie"    element={<AnunciePage />} />

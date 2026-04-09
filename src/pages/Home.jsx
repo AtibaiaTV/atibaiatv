@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import LivePlayer from '../components/LivePlayer'
 import NewsFeed from '../components/NewsFeed'
 import AdBanner from '../components/AdBanner'
 import NewsCard from '../components/NewsCard'
@@ -77,16 +76,6 @@ export default function Home() {
 
         {/* Sidebar */}
         <aside>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem' }}>
-              <div style={{ width: 8, height: 8, background: '#Cd0000', borderRadius: '50%', animation: 'atv-blink 1.2s ease-in-out infinite' }} />
-              <h3 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#Cd0000', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Ao Vivo</h3>
-            </div>
-            <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
-              <LivePlayer />
-            </div>
-          </div>
-
           <div style={{ marginBottom: '1.5rem' }}>
             <AdBanner type="square" src={square ? square.mediaUrl : '/banners/prefeitura-abril26/square.gif'} />
           </div>

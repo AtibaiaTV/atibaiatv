@@ -68,11 +68,6 @@ export default function Header() {
             ))}
           </nav>
 
-          <Link to="/ao-vivo" className="atv-live-pill">
-            <div style={{ width: 7, height: 7, background: '#fff', borderRadius: '50%', animation: 'atv-blink 1.2s ease-in-out infinite' }} />
-            AO VIVO
-          </Link>
-
           <button className={`atv-hamburger${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(o => !o)} aria-label="Menu">
             <span /><span /><span />
           </button>
@@ -86,10 +81,6 @@ export default function Header() {
             {label}
           </Link>
         ))}
-        <Link to="/ao-vivo" className="atv-mobile-live" onClick={() => setMenuOpen(false)}>
-          <div style={{ width: 8, height: 8, background: '#Cd0000', borderRadius: '50%', animation: 'atv-blink 1.2s ease-in-out infinite' }} />
-          AO VIVO
-        </Link>
       </div>
     </>
   )
