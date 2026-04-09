@@ -14,7 +14,7 @@ export default function ArticleForm() {
   const isEdit = Boolean(id)
 
   const [form, setForm] = useState({
-    title: '', category: 'Noticias', author: 'Redacao Atibaia TV',
+    title: '', category: 'Notícias', author: 'Redacao Atibaia TV',
     body: '', featured: false, color: 'blue', thumbnailUrl: '',
   })
   const [saving, setSaving] = useState(false)

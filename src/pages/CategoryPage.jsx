@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { TAG_STYLES, EDITORIAS } from '../data'
+import { EDITORIAS } from '../data'
 import useArticles from '../hooks/useArticles'
 import useVideos from '../hooks/useVideos'
 import useBanners from '../hooks/useBanners'
@@ -10,16 +10,22 @@ import AdBanner from '../components/AdBanner'
 import VideoCard from '../components/VideoCard'
 
 const CATEGORY_MAP = {
-  '/noticias': 'Noticias', '/cultura': 'Cultura', '/eventos': 'Eventos',
-  '/esportes': 'Esportes', '/turismo': 'Turismo', '/economia': 'Economia',
-  '/seguranca': 'Seguranca Publica', '/mobilidade': 'Mobilidade',
+  '/noticias':   'Notícias',
+  '/cultura':    'Cultura',
+  '/eventos':    'Eventos',
+  '/esportes':   'Esportes',
+  '/turismo':    'Turismo',
+  '/economia':   'Economia',
+  '/seguranca':  'Segurança Pública',
+  '/mobilidade': 'Mobilidade',
 }
 
 export default function CategoryPage() {
   const { pathname } = useLocation()
-  const category = CATEGORY_MAP[pathname] || 'Noticias'
-  const tagStyle = TAG_STYLES[category] || TAG_STYLES['Noticias']
-  const editoria = EDITORIAS.find(e => e.label === category)
+  const slug = pathname.slice(1)
+  const category = CATEGORY_MAP[pathname] || 'Notícias'
+  const editoria = EDITORIAS.find(e => e.slug === slug)
+  const tagStyle = { bg: editoria?.bg || '#eef3fa', color: editoria?.color || '#4971B1' }
   const { articles: news, loading } = useArticles(category)
   const { videos } = useVideos()
   const { getBanner } = useBanners()
@@ -28,7 +34,7 @@ export default function CategoryPage() {
   const billboard = getBanner('billboard')
   const square = getBanner('square')
 
-  useEffect(() => { trackPageView('category-' + pathname.replace('/', '')) }, [pathname])
+  useEffect(() => { trackPageView('category-' + slug) }, [slug])
 
   return (
     <>
@@ -42,7 +48,7 @@ export default function CategoryPage() {
             {editoria?.icon || '📰'}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{ fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', fontWeight: 700, color: 'var(--text)', lineHeight: 1.1 }}>{category}</h1>
+            <h1 style={{ fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', fontWeight: 700, color: 'var(--text)', lineHeight: 1.1 }}>{editoria?.label || category}</h1>
             {editoria?.description && <p style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: 4 }}>{editoria.description}</p>}
           </div>
           <span style={{ fontSize: '0.75rem', color: tagStyle.color, background: '#fff', padding: '6px 14px', borderRadius: 20, fontWeight: 600 }}>
