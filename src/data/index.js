@@ -30,6 +30,11 @@ export const EDITORIAS = [
   { slug: 'eventos',    label: 'Eventos',            icon: '📅', color: '#67AA4D', bg: '#edf7e8', description: 'Agenda completa da cidade e região' },
   { slug: 'esportes',   label: 'Esportes',           icon: '⚽', color: '#c47a00', bg: '#fff7e0', description: 'Esporte amador e profissional da região' },
   { slug: 'turismo',    label: 'Turismo',            icon: '🏔️', color: '#1a8c7a', bg: '#e6f7f5', description: 'Serra de Atibaia, ecoturismo e destinos' },
+  { slug: 'educacao',   label: 'Educação',           icon: '🎓', color: '#2563eb', bg: '#eff6ff', description: 'Ensino, escolas e educação em Atibaia' },
+  { slug: 'saude',      label: 'Saúde',              icon: '🏥', color: '#059669', bg: '#ecfdf5', description: 'Saúde pública e bem-estar na cidade' },
+  { slug: 'politica',   label: 'Política',           icon: '🏛️', color: '#7c3aed', bg: '#f5f3ff', description: 'Câmara, prefeitura e decisões políticas' },
+  { slug: 'brasil',     label: 'Brasil',             icon: '🇧🇷', color: '#15803d', bg: '#f0fdf4', description: 'Notícias do Brasil em destaque' },
+  { slug: 'mundo',      label: 'Mundo',              icon: '🌍', color: '#0891b2', bg: '#ecfeff', description: 'O que acontece no mundo' },
   { slug: 'economia',   label: 'Economia',           icon: '💼', color: '#Cd0000', bg: '#faeaea', description: 'Negócios, empregos e desenvolvimento local' },
   { slug: 'seguranca',  label: 'Segurança Pública',  icon: '🛡️', color: '#1a6fa8', bg: '#e8f4fd', description: 'Segurança e ordem pública em Atibaia' },
   { slug: 'mobilidade', label: 'Mobilidade',         icon: '🚌', color: '#7a5c00', bg: '#fff7e0', description: 'Trânsito, transporte e mobilidade urbana' },
@@ -48,7 +53,7 @@ export const SCHEDULE = [
 ]
 
 // ─── CATEGORIAS ──────────────────────────────────────────────────────────────
-export const CATEGORIES = ['Todos', 'Notícias', 'Segurança Pública', 'Mobilidade', 'Economia', 'Cultura', 'Eventos', 'Esportes']
+export const CATEGORIES = ['Todos', 'Notícias', 'Segurança Pública', 'Mobilidade', 'Economia', 'Cultura', 'Eventos', 'Esportes', 'Turismo', 'Educação', 'Saúde', 'Política', 'Brasil', 'Mundo']
 
 // ─── TAG STYLES ──────────────────────────────────────────────────────────────
 export const TAG_STYLES = {

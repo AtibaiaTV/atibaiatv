@@ -11,6 +11,11 @@ const NAV_LINKS = [
   { to: '/eventos',   label: 'Eventos'    },
   { to: '/esportes',  label: 'Esportes'   },
   { to: '/turismo',   label: 'Turismo'    },
+  { to: '/educacao',  label: 'Educacao'   },
+  { to: '/saude',     label: 'Saude'      },
+  { to: '/politica',  label: 'Politica'   },
+  { to: '/brasil',    label: 'Brasil'     },
+  { to: '/mundo',     label: 'Mundo'      },
 ]
 
 const css = `

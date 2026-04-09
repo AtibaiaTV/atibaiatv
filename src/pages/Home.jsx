@@ -3,9 +3,7 @@ import LivePlayer from '../components/LivePlayer'
 import NewsFeed from '../components/NewsFeed'
 import AdBanner from '../components/AdBanner'
 import NewsCard from '../components/NewsCard'
-import EditoriaCard from '../components/EditoriaCard'
 import VideoCard from '../components/VideoCard'
-import { EDITORIAS } from '../data'
 import useArticles from '../hooks/useArticles'
 import useVideos from '../hooks/useVideos'
 import useBanners from '../hooks/useBanners'
@@ -62,17 +60,6 @@ export default function Home() {
       {/* CONTEUDO + SIDEBAR */}
       <div className="atv-container atv-grid-main" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div>
-          {/* Editorias */}
-          <div style={{ marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#Cd0000', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Editorias</h2>
-              <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
-            </div>
-            <div className="atv-grid-editorias">
-              {EDITORIAS.map(ed => <EditoriaCard key={ed.slug} editoria={ed} />)}
-            </div>
-          </div>
-
           {/* Mais noticias */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1rem' }}>

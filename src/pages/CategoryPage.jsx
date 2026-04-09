@@ -18,6 +18,11 @@ const CATEGORY_MAP = {
   '/economia':   'Economia',
   '/seguranca':  'Segurança Pública',
   '/mobilidade': 'Mobilidade',
+  '/educacao':  'Educação',
+  '/saude':     'Saúde',
+  '/politica':  'Política',
+  '/brasil':    'Brasil',
+  '/mundo':     'Mundo',
 }
 
 export default function CategoryPage() {

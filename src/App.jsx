@@ -49,6 +49,11 @@ export default function App() {
         <Route path="/economia"   element={<CategoryPage />} />
         <Route path="/seguranca"  element={<CategoryPage />} />
         <Route path="/mobilidade" element={<CategoryPage />} />
+        <Route path="/educacao"  element={<CategoryPage />} />
+        <Route path="/saude"     element={<CategoryPage />} />
+        <Route path="/politica"  element={<CategoryPage />} />
+        <Route path="/brasil"    element={<CategoryPage />} />
+        <Route path="/mundo"     element={<CategoryPage />} />
         <Route path="/ao-vivo"    element={<AoVivo />} />
         <Route path="/artigo/:id" element={<ArticlePage />} />
         <Route path="/sobre"      element={<SobrePage />} />
