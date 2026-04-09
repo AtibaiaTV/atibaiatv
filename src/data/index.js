@@ -35,6 +35,9 @@ export const EDITORIAS = [
   { slug: 'politica',   label: 'Política',           icon: '🏛️', color: '#7c3aed', bg: '#f5f3ff', description: 'Câmara, prefeitura e decisões políticas' },
   { slug: 'brasil',     label: 'Brasil',             icon: '🇧🇷', color: '#15803d', bg: '#f0fdf4', description: 'Notícias do Brasil em destaque' },
   { slug: 'mundo',      label: 'Mundo',              icon: '🌍', color: '#0891b2', bg: '#ecfeff', description: 'O que acontece no mundo' },
+  { slug: 'cidade',     label: 'Cidade',             icon: '🏙️', color: '#b45309', bg: '#fffbeb', description: 'Infraestrutura, obras e bairros de Atibaia' },
+  { slug: 'zeladoria',  label: 'Zeladoria',          icon: '🧹', color: '#0f766e', bg: '#f0fdfa', description: 'Conservação, limpeza e manutenção urbana' },
+  { slug: 'alimentacao',label: 'Alimentação',         icon: '🍽️', color: '#dc2626', bg: '#fff1f2', description: 'Gastronomia, feiras e segurança alimentar' },
   { slug: 'economia',   label: 'Economia',           icon: '💼', color: '#Cd0000', bg: '#faeaea', description: 'Negócios, empregos e desenvolvimento local' },
   { slug: 'seguranca',  label: 'Segurança Pública',  icon: '🛡️', color: '#1a6fa8', bg: '#e8f4fd', description: 'Segurança e ordem pública em Atibaia' },
   { slug: 'mobilidade', label: 'Mobilidade',         icon: '🚌', color: '#7a5c00', bg: '#fff7e0', description: 'Trânsito, transporte e mobilidade urbana' },
@@ -53,7 +56,7 @@ export const SCHEDULE = [
 ]
 
 // ─── CATEGORIAS ──────────────────────────────────────────────────────────────
-export const CATEGORIES = ['Todos', 'Notícias', 'Segurança Pública', 'Mobilidade', 'Economia', 'Cultura', 'Eventos', 'Esportes', 'Turismo', 'Educação', 'Saúde', 'Política', 'Brasil', 'Mundo']
+export const CATEGORIES = ['Todos', 'Notícias', 'Segurança Pública', 'Mobilidade', 'Economia', 'Cultura', 'Eventos', 'Esportes', 'Turismo', 'Educação', 'Saúde', 'Política', 'Brasil', 'Mundo', 'Cidade', 'Zeladoria', 'Alimentação']
 
 // ─── TAG STYLES ──────────────────────────────────────────────────────────────
 export const TAG_STYLES = {

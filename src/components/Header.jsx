@@ -16,6 +16,9 @@ const NAV_LINKS = [
   { to: '/politica',  label: 'Politica'   },
   { to: '/brasil',    label: 'Brasil'     },
   { to: '/mundo',     label: 'Mundo'      },
+  { to: '/cidade',    label: 'Cidade'     },
+  { to: '/zeladoria', label: 'Zeladoria'  },
+  { to: '/alimentacao', label: 'Alimentacao' },
 ]
 
 const css = `

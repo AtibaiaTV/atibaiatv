@@ -23,6 +23,9 @@ const CATEGORY_MAP = {
   '/politica':  'Política',
   '/brasil':    'Brasil',
   '/mundo':     'Mundo',
+  '/cidade':    'Cidade',
+  '/zeladoria': 'Zeladoria',
+  '/alimentacao': 'Alimentação',
 }
 
 export default function CategoryPage() {
