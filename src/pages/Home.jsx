@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import NewsCard from '../components/NewsCard'
 import VideoCard from '../components/VideoCard'
+import AdBanner from '../components/AdBanner'
 import BannerCarousel from '../components/BannerCarousel'
 import useArticles from '../hooks/useArticles'
 import useVideos from '../hooks/useVideos'
@@ -17,18 +18,32 @@ export default function Home() {
 
   var bannersData = useBanners()
   var banners = bannersData.banners
+  var getBanner = bannersData.getBanner
 
   useEffect(function() { trackPageView('home') }, [])
 
-  var featured = articles[0]
-  var sideNews  = articles.slice(1, 4)
-  var restNews  = articles.slice(4)
+  var billboard   = getBanner('billboard')
+  var leaderboard = getBanner('leaderboard')
 
-  /* video mais recente */
+  /* todos os banners do tipo square para o carrossel */
+  var squareBanners = banners.filter(function(b) { return b.type === 'square' })
+
+  var featured   = articles[0]
+  var sideNews   = articles.slice(1, 4)
+  var restNews   = articles.slice(4)
   var latestVideo = videos[0] || null
 
   return (
     <>
+      {/* BANNER TOPO — billboard */}
+      <div style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderBottom: '1px solid #e5e7eb' }}>
+        <AdBanner
+          type="billboard"
+          src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'}
+          href={billboard ? billboard.linkUrl : '#'}
+        />
+      </div>
+
       {/* HERO */}
       <div className="atv-container" style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
         {!loading && featured && (
@@ -39,9 +54,7 @@ export default function Home() {
             <div style={{ gridRow: 'span 3' }}>
               <NewsCard news={featured} featured={true} />
             </div>
-            {sideNews.map(function(n) {
-              return <NewsCard key={n.id} news={n} />
-            })}
+            {sideNews.map(function(n) { return <NewsCard key={n.id} news={n} /> })}
           </div>
         )}
         {loading && (
@@ -51,10 +64,19 @@ export default function Home() {
         )}
       </div>
 
-      {/* CONTEUDO + SIDEBAR */}
-      <div className="atv-container atv-grid-main" style={{ paddingTop: '0.5rem', paddingBottom: '2rem' }}>
+      {/* BANNER MEIO — leaderboard */}
+      <div style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
+        {leaderboard && leaderboard.mediaType === 'video' ? (
+          <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
+        ) : (
+          <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
+        )}
+      </div>
 
-        {/* Coluna principal — mais noticias */}
+      {/* CONTEUDO + SIDEBAR */}
+      <div className="atv-container atv-grid-main" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
+
+        {/* Coluna principal */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1rem' }}>
             <h2 style={{
@@ -76,9 +98,9 @@ export default function Home() {
         {/* Sidebar */}
         <aside>
 
-          {/* 1 banner 300x300 rotativo */}
+          {/* 1 square 300x300 — carrossel rotativo */}
           <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
-            <BannerCarousel banners={banners} width={300} height={300} />
+            <BannerCarousel banners={squareBanners} width={300} height={300} />
           </div>
 
           {/* 1 video mais recente */}
@@ -96,6 +118,15 @@ export default function Home() {
           )}
 
         </aside>
+      </div>
+
+      {/* BANNER RODAPE — leaderboard */}
+      <div style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderTop: '1px solid #e5e7eb' }}>
+        {leaderboard && leaderboard.mediaType === 'video' ? (
+          <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
+        ) : (
+          <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
+        )}
       </div>
     </>
   )
