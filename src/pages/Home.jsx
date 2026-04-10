@@ -8,40 +8,53 @@ import useVideos from '../hooks/useVideos'
 import useBanners from '../hooks/useBanners'
 import { trackPageView } from '../hooks/usePageViews'
 
+var bannerWrap = {
+  background: '#f4f5f7',
+  borderTop: '1px solid #e5e7eb',
+  borderBottom: '1px solid #e5e7eb',
+  padding: '10px 0',
+}
+
 export default function Home() {
   var articlesData = useArticles()
   var articles = articlesData.articles
-  var loading = articlesData.loading
+  var loading   = articlesData.loading
 
-  var videosData = useVideos()
-  var videos = videosData.videos
+  var videosData  = useVideos()
+  var videos      = videosData.videos
 
-  var bannersData = useBanners()
-  var banners = bannersData.banners
-  var getBanner = bannersData.getBanner
+  var bannersData    = useBanners()
+  var banners        = bannersData.banners
+  var getBanner      = bannersData.getBanner
 
   useEffect(function() { trackPageView('home') }, [])
 
   var billboard   = getBanner('billboard')
   var leaderboard = getBanner('leaderboard')
 
-  /* todos os banners do tipo square para o carrossel */
+  /* todos os squares para o carrossel */
   var squareBanners = banners.filter(function(b) { return b.type === 'square' })
 
-  var featured   = articles[0]
-  var sideNews   = articles.slice(1, 4)
-  var restNews   = articles.slice(4)
+  var featured    = articles[0]
+  var sideNews    = articles.slice(1, 4)
+  var restNews    = articles.slice(4)
   var latestVideo = videos[0] || null
+
+  var leaderEl = leaderboard && leaderboard.mediaType === 'video'
+    ? <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
+    : <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
 
   return (
     <>
-      {/* BANNER TOPO — billboard */}
-      <div style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderBottom: '1px solid #e5e7eb' }}>
-        <AdBanner
-          type="billboard"
-          src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'}
-          href={billboard ? billboard.linkUrl : '#'}
-        />
+      {/* BANNER TOPO — billboard, mesma largura do conteudo */}
+      <div style={bannerWrap}>
+        <div className="atv-container">
+          <AdBanner
+            type="billboard"
+            src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'}
+            href={billboard ? billboard.linkUrl : '#'}
+          />
+        </div>
       </div>
 
       {/* HERO */}
@@ -65,12 +78,10 @@ export default function Home() {
       </div>
 
       {/* BANNER MEIO — leaderboard */}
-      <div style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
-        {leaderboard && leaderboard.mediaType === 'video' ? (
-          <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
-        ) : (
-          <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
-        )}
+      <div style={bannerWrap}>
+        <div className="atv-container">
+          {leaderEl}
+        </div>
       </div>
 
       {/* CONTEUDO + SIDEBAR */}
@@ -98,7 +109,7 @@ export default function Home() {
         {/* Sidebar */}
         <aside>
 
-          {/* 1 square 300x300 — carrossel rotativo */}
+          {/* 1 square 300x300 rotativo */}
           <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
             <BannerCarousel banners={squareBanners} width={300} height={300} />
           </div>
@@ -121,12 +132,10 @@ export default function Home() {
       </div>
 
       {/* BANNER RODAPE — leaderboard */}
-      <div style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderTop: '1px solid #e5e7eb' }}>
-        {leaderboard && leaderboard.mediaType === 'video' ? (
-          <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
-        ) : (
-          <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
-        )}
+      <div style={bannerWrap}>
+        <div className="atv-container">
+          {leaderEl}
+        </div>
       </div>
     </>
   )
