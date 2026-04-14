@@ -70,6 +70,14 @@ export const TAG_STYLES = {
   'Mobilidade':       { bg: '#fff7e0', color: '#7a5c00' },
   'Variedades':       { bg: '#fce4ec', color: '#b71c5b' },
   'Atibaia em Foco':  { bg: '#eef3fa', color: '#4971B1' },
+  'Educação':         { bg: '#eff6ff', color: '#2563eb' },
+  'Saúde':            { bg: '#ecfdf5', color: '#059669' },
+  'Política':         { bg: '#f5f3ff', color: '#7c3aed' },
+  'Brasil':           { bg: '#f0fdf4', color: '#15803d' },
+  'Mundo':            { bg: '#ecfeff', color: '#0891b2' },
+  'Cidade':           { bg: '#fffbeb', color: '#b45309' },
+  'Zeladoria':        { bg: '#f0fdfa', color: '#0f766e' },
+  'Alimentação':      { bg: '#fff1f2', color: '#dc2626' },
 }
 
 // ─── NOTÍCIAS ────────────────────────────────────────────────────────────────

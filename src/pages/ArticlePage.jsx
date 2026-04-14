@@ -31,7 +31,7 @@ export default function ArticlePage() {
   if (loading) return <div style={{ textAlign: 'center', padding: '4rem', color: '#6b7280' }}>Carregando...</div>
   if (!news) return <div style={{ textAlign: 'center', padding: '4rem', color: '#6b7280' }}>Materia nao encontrada.</div>
 
-  const tagStyle = TAG_STYLES[news.category] || TAG_STYLES['Noticias']
+  const tagStyle = TAG_STYLES[news.category] || TAG_STYLES['Notícias']
   const related = articles.filter(n => n.category === news.category && n.id !== news.id).slice(0, 4)
   const billboard = getBanner('billboard')
   const square = getBanner('square')
