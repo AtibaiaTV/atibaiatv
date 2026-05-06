@@ -29,7 +29,8 @@ export default function VideoForm() {
     setSaving(true)
     try {
       if (isEdit) {
-        await updateDoc(doc(db, 'videos', id), form)
+        const { createdAt, ...data } = form
+        await updateDoc(doc(db, 'videos', id), data)
       } else {
         await addDoc(collection(db, 'videos'), { ...form, createdAt: serverTimestamp() })
       }

@@ -2,6 +2,14 @@ import { useState, useRef } from 'react'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { storage } from '../../firebase'
 
+function matchesAccept(file, accept) {
+  if (!accept || accept === 'image/*,video/*') return true
+  return accept.split(',').map(t => t.trim()).some(t => {
+    if (t.endsWith('/*')) return file.type.startsWith(t.replace('/*', '/'))
+    return file.type === t
+  })
+}
+
 export default function ImageUpload({ value, onChange, path, accept = 'image/*,video/*' }) {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -9,6 +17,10 @@ export default function ImageUpload({ value, onChange, path, accept = 'image/*,v
 
   const handleFile = (file) => {
     if (!file) return
+    if (!matchesAccept(file, accept)) {
+      alert('Arquivo inválido. Use uma imagem (JPG, PNG, GIF).')
+      return
+    }
     setUploading(true)
     const ext = file.name.split('.').pop()
     const storageRef = ref(storage, `${path}/${Date.now()}.${ext}`)
