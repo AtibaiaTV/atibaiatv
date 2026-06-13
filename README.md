@@ -1,6 +1,6 @@
 # Atibaia TV — Site Oficial
 
-Site oficial da Atibaia TV, desenvolvido com React + Vite.
+Site oficial da AtibaiaTV, desenvolvido com React + Vite.
 
 ## Tecnologias
 - React 18
