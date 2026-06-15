@@ -84,3 +84,4 @@ hospedagem estática. Após `npm run build`, faça upload da pasta `dist/`.
 
 Desenvolvido para **Atibaia TV** — www.atibaiatv.com.br  
 Afiliada **Rede Redesa** · Rede entre Serras e Águas
+<!-- updated -->
