@@ -34,6 +34,7 @@ export default function ArticlePage() {
   const tagStyle = TAG_STYLES[news.category] || TAG_STYLES['Notícias']
   const related = articles.filter(n => n.category === news.category && n.id !== news.id).slice(0, 4)
   const billboard = getBanner('billboard')
+  const leaderboard = getBanner('leaderboard')
   const square = getBanner('square')
 
   const CARD_BG = {
@@ -48,7 +49,7 @@ export default function ArticlePage() {
   return (
     <>
       <div className="atv-banner-wrap" style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderBottom: '1px solid #e5e7eb' }}>
-        <AdBanner type="billboard" src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'} />
+        {billboard && <AdBanner type="billboard" src={billboard.mediaUrl} href={billboard.linkUrl || '#'} />}
       </div>
 
       <div className="atv-container atv-grid-article atv-section-pad">
@@ -88,9 +89,13 @@ export default function ArticlePage() {
             ))}
           </div>
 
-          <div style={{ margin: '2rem 0' }}>
-            <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
-          </div>
+          {leaderboard && (
+            <div style={{ margin: '2rem 0' }}>
+              {leaderboard.mediaType === 'video'
+                ? <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
+                : <AdBanner type="leaderboard" src={leaderboard.mediaUrl} href={leaderboard.linkUrl || '#'} />}
+            </div>
+          )}
 
           {related.length > 0 && (
             <div>

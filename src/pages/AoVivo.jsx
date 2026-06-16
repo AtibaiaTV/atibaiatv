@@ -4,17 +4,23 @@ import AdBanner from '../components/AdBanner'
 import { trackPageView } from '../hooks/usePageViews'
 import { SCHEDULE, RECENT_VIDEOS } from '../data'
 import VideoCard from '../components/VideoCard'
+import useBanners from '../hooks/useBanners'
 
 export default function AoVivo() {
   const [activeTab, setActiveTab] = useState('grade')
+  const { getBanner } = useBanners()
+  const billboard = getBanner('billboard')
+  const leaderboard = getBanner('leaderboard')
 
   useEffect(() => { trackPageView("ao-vivo") }, [])
   return (
     <>
       {/* Banner topo */}
-      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'center', padding: '10px 2rem' }}>
-        <AdBanner type="billboard" src="/banners/prefeitura-abril26/billboard.gif" />
-      </div>
+      {billboard && (
+        <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'center', padding: '10px 2rem' }}>
+          <AdBanner type="billboard" src={billboard.mediaUrl} href={billboard.linkUrl || '#'} />
+        </div>
+      )}
 
       {/* Cabeçalho */}
       <div style={{ background: 'linear-gradient(135deg, #0f1b2d 0%, #1a3a5c 100%)', padding: '1.5rem 2rem' }}>
@@ -71,9 +77,13 @@ export default function AoVivo() {
           </div>
 
           {/* Banner após player */}
-          <div style={{ marginTop: '1.5rem' }}>
-            <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
-          </div>
+          {leaderboard && (
+            <div style={{ marginTop: '1.5rem' }}>
+              {leaderboard.mediaType === 'video'
+                ? <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
+                : <AdBanner type="leaderboard" src={leaderboard.mediaUrl} href={leaderboard.linkUrl || '#'} />}
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}

@@ -40,22 +40,21 @@ export default function Home() {
   var restNews    = articles.slice(4)
   var latestVideo = videos[0] || null
 
-  var leaderEl = leaderboard && leaderboard.mediaType === 'video'
-    ? <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
-    : <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
+  var leaderEl = !leaderboard ? null
+    : leaderboard.mediaType === 'video'
+      ? <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
+      : <AdBanner type="leaderboard" src={leaderboard.mediaUrl} href={leaderboard.linkUrl || '#'} />
 
   return (
     <>
       {/* BANNER TOPO — billboard, mesma largura do conteudo */}
-      <div style={bannerWrap}>
-        <div className="atv-container">
-          <AdBanner
-            type="billboard"
-            src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'}
-            href={billboard ? billboard.linkUrl : '#'}
-          />
+      {billboard && (
+        <div style={bannerWrap}>
+          <div className="atv-container">
+            <AdBanner type="billboard" src={billboard.mediaUrl} href={billboard.linkUrl || '#'} />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* HERO */}
       <div className="atv-container" style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
@@ -78,11 +77,13 @@ export default function Home() {
       </div>
 
       {/* BANNER MEIO — leaderboard */}
-      <div style={bannerWrap}>
-        <div className="atv-container">
-          {leaderEl}
+      {leaderEl && (
+        <div style={bannerWrap}>
+          <div className="atv-container">
+            {leaderEl}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* CONTEUDO + SIDEBAR */}
       <div className="atv-container atv-grid-main" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
@@ -132,11 +133,13 @@ export default function Home() {
       </div>
 
       {/* BANNER RODAPE — leaderboard */}
-      <div style={bannerWrap}>
-        <div className="atv-container">
-          {leaderEl}
+      {leaderEl && (
+        <div style={bannerWrap}>
+          <div className="atv-container">
+            {leaderEl}
+          </div>
         </div>
-      </div>
+      )}
     </>
   )
 }
