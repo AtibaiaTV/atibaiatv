@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import NewsCard from '../components/NewsCard'
 import VideoCard from '../components/VideoCard'
 import ShortVideos from '../components/ShortVideos'
@@ -18,7 +18,13 @@ var bannerWrap = {
   padding: '10px 0',
 }
 
+var PAGE_SIZE = 12
+
 export default function Home() {
+  var visibleState = useState(PAGE_SIZE)
+  var visibleCount = visibleState[0]
+  var setVisibleCount = visibleState[1]
+
   var articlesData = useArticles()
   var articles = articlesData.articles
   var loading   = articlesData.loading
@@ -110,7 +116,7 @@ export default function Home() {
             <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
           </div>
           <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-            {restNews.map(function(n, i) {
+            {restNews.slice(0, visibleCount).map(function(n, i) {
               /* a cada 4 materias, uma carta "destaque" maior quebra a monotonia da lista */
               var isHighlight = i > 0 && i % 4 === 0
               return <NewsCard key={n.id} news={n} highlight={isHighlight} />
@@ -121,10 +127,21 @@ export default function Home() {
               </div>
             )}
           </div>
+
+          {visibleCount < restNews.length && (
+            <div style={{ textAlign: 'center', marginTop: '1.25rem' }}>
+              <button onClick={function() { setVisibleCount(function(c) { return c + PAGE_SIZE }) }} style={{
+                padding: '10px 28px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff',
+                color: '#4971B1', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
+              }}>
+                Carregar mais noticias
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
-        <aside style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <aside className="atv-sidebar-sticky" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
           {/* 1 square 300x300 rotativo */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { EDITORIAS } from '../data'
 import useArticles from '../hooks/useArticles'
@@ -31,8 +31,11 @@ const CATEGORY_MAP = {
   '/horoscopo': 'Horóscopo',
 }
 
+var PAGE_SIZE = 12
+
 export default function CategoryPage() {
   const { pathname } = useLocation()
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const slug = pathname.slice(1)
   const category = CATEGORY_MAP[pathname] || 'Notícias'
   const editoria = EDITORIAS.find(e => e.slug === slug)
@@ -46,6 +49,7 @@ export default function CategoryPage() {
   const square = getBanner('square')
 
   useEffect(() => { trackPageView('category-' + slug) }, [slug])
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [slug])
 
   return (
     <>
@@ -85,7 +89,17 @@ export default function CategoryPage() {
               )}
               {rest.length > 0 && (
                 <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-                  {rest.map((n, i) => <NewsCard key={n.id} news={n} highlight={i > 0 && i % 4 === 0} />)}
+                  {rest.slice(0, visibleCount).map((n, i) => <NewsCard key={n.id} news={n} highlight={i > 0 && i % 4 === 0} />)}
+                </div>
+              )}
+              {visibleCount < rest.length && (
+                <div style={{ textAlign: 'center', marginTop: '1.25rem' }}>
+                  <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} style={{
+                    padding: '10px 28px', borderRadius: 8, border: '1px solid var(--border)', background: '#fff',
+                    color: '#4971B1', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
+                  }}>
+                    Carregar mais noticias
+                  </button>
                 </div>
               )}
             </>
@@ -95,7 +109,7 @@ export default function CategoryPage() {
           </div>
         </div>
 
-        <aside style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <aside className="atv-sidebar-sticky" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <AdBanner type="square" src={square ? square.mediaUrl : '/banners/prefeitura-abril26/square.gif'} />
           <div>
             <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#Cd0000', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>

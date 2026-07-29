@@ -34,8 +34,9 @@ html.atv-underline-links a { text-decoration: underline; }
 
 /* Grid helpers */
 .atv-grid-hero { display: grid; grid-template-columns: 2fr 1fr; gap: 2px; }
-.atv-grid-main { display: grid; grid-template-columns: 1fr 340px; gap: 2.5rem; }
-.atv-grid-article { display: grid; grid-template-columns: 1fr 300px; gap: 2rem; }
+.atv-grid-main { display: grid; grid-template-columns: 1fr 340px; gap: 2.5rem; align-items: start; }
+.atv-sidebar-sticky { position: sticky; top: 84px; }
+.atv-grid-article { display: grid; grid-template-columns: 1fr 300px; gap: 2rem; align-items: start; }
 .atv-grid-editorias { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .atv-grid-related { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; }
 .atv-container { max-width: 1280px; margin: 0 auto; padding-left: 2rem; padding-right: 2rem; }
@@ -50,6 +51,7 @@ html.atv-underline-links a { text-decoration: underline; }
   .atv-grid-article { grid-template-columns: 1fr; gap: 1.5rem; }
   .atv-grid-editorias { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .atv-grid-related { grid-template-columns: 1fr; }
+  .atv-sidebar-sticky { position: static; }
   .atv-container { padding-left: 12px; padding-right: 12px; }
   .atv-section-pad { padding-top: 1rem; padding-bottom: 1rem; }
   .atv-banner-wrap { padding: 8px 12px; }
