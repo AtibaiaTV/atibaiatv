@@ -29,6 +29,17 @@ export default function Denuncia() {
   var consentState = useState(false)
   var consent = consentState[0]
   var setConsent = consentState[1]
+  var anonimoState = useState(true)
+  var anonimo = anonimoState[0]
+  var setAnonimo = anonimoState[1]
+
+  function toggleAnonimo(checked) {
+    setAnonimo(checked)
+    if (checked) {
+      setConsent(false)
+      setForm(function(f) { return Object.assign({}, f, { name: '', contact: '' }) })
+    }
+  }
 
   useEffect(function() { trackPageView('denuncia') }, [])
 
@@ -130,7 +141,7 @@ export default function Denuncia() {
           </div>
         )}
 
-        <button onClick={function() { setForm(EMPTY_FORM); setPontosInfo(null); setConsent(false); setDone(false) }} style={{
+        <button onClick={function() { setForm(EMPTY_FORM); setPontosInfo(null); setConsent(false); setAnonimo(true); setDone(false) }} style={{
           padding: '10px 24px', borderRadius: 8, border: 'none', background: '#4971B1',
           color: '#fff', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer',
         }}>Enviar outra denúncia</button>
@@ -207,21 +218,34 @@ export default function Denuncia() {
           <ImageUpload value={form.mediaUrl} onChange={function(url) { set('mediaUrl', url) }} path="denuncias" accept="image/*,video/*" />
         </DashFormField>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <DashFormField label="Seu nome" hint="Sua denúncia continua anônima — o nome fica só no nosso controle interno">
-            <input value={form.name} onChange={function(e) { set('name', e.target.value) }} style={inputStyle} placeholder="Anônimo" />
-          </DashFormField>
-          <DashFormField label="Telefone ou e-mail" hint="Usado só internamente, nunca aparece no site">
-            <input value={form.contact} onChange={function(e) { set('contact', e.target.value) }} style={inputStyle} placeholder="Opcional" />
-          </DashFormField>
-        </div>
+        <label style={{
+          display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+          padding: '10px 14px', border: '1px solid ' + (anonimo ? '#c8d8ef' : '#e5e7eb'), borderRadius: 8,
+          background: anonimo ? '#eef3fa' : '#fff', marginBottom: '1rem',
+        }}>
+          <input type="checkbox" checked={anonimo} onChange={function(e) { toggleAnonimo(e.target.checked) }} style={{ flexShrink: 0 }} />
+          <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1a1a2e' }}>🔒 Enviar como denúncia anônima</span>
+        </label>
 
-        {(form.name || form.contact) && (
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: '0.78rem', color: '#4b5563', marginBottom: '1rem', cursor: 'pointer', lineHeight: 1.5 }}>
-            <input type="checkbox" checked={consent} onChange={function(e) { setConsent(e.target.checked) }} style={{ marginTop: 3, flexShrink: 0 }} />
-            Autorizo o uso do meu nome e telefone/e-mail para fins internos de ranking e contato, conforme a{' '}
-            <Link to="/privacidade" target="_blank" style={{ color: '#4971B1', fontWeight: 600 }}>Política de Privacidade</Link>. Sei que minha denúncia aparece sempre anônima no site.
-          </label>
+        {!anonimo && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <DashFormField label="Seu nome" hint="Sua denúncia continua anônima — o nome fica só no nosso controle interno">
+                <input value={form.name} onChange={function(e) { set('name', e.target.value) }} style={inputStyle} placeholder="Ex. João da Silva" />
+              </DashFormField>
+              <DashFormField label="Telefone ou e-mail" hint="Usado só internamente, nunca aparece no site">
+                <input value={form.contact} onChange={function(e) { set('contact', e.target.value) }} style={inputStyle} placeholder="(11) 99999-9999" />
+              </DashFormField>
+            </div>
+
+            {(form.name || form.contact) && (
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: '0.78rem', color: '#4b5563', marginBottom: '1rem', cursor: 'pointer', lineHeight: 1.5 }}>
+                <input type="checkbox" checked={consent} onChange={function(e) { setConsent(e.target.checked) }} style={{ marginTop: 3, flexShrink: 0 }} />
+                Autorizo o uso do meu nome e telefone/e-mail para fins internos de ranking e contato, conforme a{' '}
+                <Link to="/privacidade" target="_blank" style={{ color: '#4971B1', fontWeight: 600 }}>Política de Privacidade</Link>. Sei que minha denúncia aparece sempre anônima no site.
+              </label>
+            )}
+          </>
         )}
 
         {error && (
