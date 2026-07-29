@@ -4,7 +4,7 @@ import { db } from '../firebase'
 
 function votoKey(id) { return 'atv-enquete-voto-' + id }
 
-export default function EnqueteWidget() {
+export default function EnqueteWidget({ compact = false }) {
   var enqueteState = useState(null)
   var enquete = enqueteState[0]
   var setEnquete = enqueteState[1]
@@ -38,6 +38,12 @@ export default function EnqueteWidget() {
 
   var opcoesArr = Object.keys(enquete.opcoes || {}).map(function(key) {
     return Object.assign({ key: key }, enquete.opcoes[key])
+  }).sort(function(a, b) {
+    /* Firestore nao garante ordem de campos de map; ordena pelo indice
+       numerico da chave (opt_0, opt_1, ...) pra manter a ordem de criacao */
+    var na = parseInt(a.key.replace('opt_', ''), 10)
+    var nb = parseInt(b.key.replace('opt_', ''), 10)
+    return na - nb
   })
   var totalVotos = opcoesArr.reduce(function(sum, o) { return sum + (o.votos || 0) }, 0)
 
@@ -54,24 +60,33 @@ export default function EnqueteWidget() {
       .finally(function() { setEnviando(false) })
   }
 
+  var headerPad = compact ? '0.5rem 0.8rem' : '0.9rem 1.1rem'
+  var bodyPad = compact ? '0.6rem 0.8rem 0.7rem' : '1rem 1.1rem'
+  var questionSize = compact ? '0.78rem' : '0.9rem'
+  var questionMargin = compact ? 8 : 12
+  var optGap = compact ? 5 : 8
+  var optPad = compact ? '6px 10px' : '9px 12px'
+  var optFontSize = compact ? '0.74rem' : '0.82rem'
+  var footerMargin = compact ? 6 : 10
+
   return (
     <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden' }}>
-      <div style={{ padding: '0.9rem 1.1rem', borderBottom: '1px solid #f3f4f6' }}>
-        <h3 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1a2e', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>📊 Enquete</h3>
+      <div style={{ padding: headerPad, borderBottom: '1px solid #f3f4f6' }}>
+        <h3 style={{ fontSize: compact ? '0.7rem' : '0.8rem', fontWeight: 700, color: '#1a1a2e', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>📊 Enquete</h3>
       </div>
-      <div style={{ padding: '1rem 1.1rem' }}>
-        <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1a1a2e', marginBottom: 12, lineHeight: 1.4 }}>{enquete.pergunta}</p>
+      <div style={{ padding: bodyPad }}>
+        <p style={{ fontSize: questionSize, fontWeight: 600, color: '#1a1a2e', marginBottom: questionMargin, marginTop: 0, lineHeight: 1.35 }}>{enquete.pergunta}</p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: optGap, maxHeight: compact ? 150 : 'none', overflowY: compact ? 'auto' : 'visible' }}>
           {opcoesArr.map(function(op) {
             var pct = totalVotos > 0 ? Math.round(((op.votos || 0) / totalVotos) * 100) : 0
             var isVotada = votada === op.key
 
             if (votada) {
               return (
-                <div key={op.key} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '1px solid ' + (isVotada ? '#4971B1' : '#e5e7eb'), padding: '8px 12px' }}>
+                <div key={op.key} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '1px solid ' + (isVotada ? '#4971B1' : '#e5e7eb'), padding: optPad }}>
                   <div style={{ position: 'absolute', inset: 0, width: pct + '%', background: isVotada ? '#eef3fa' : '#f9fafb', transition: 'width .4s ease' }} />
-                  <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: '0.82rem' }}>
+                  <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: optFontSize }}>
                     <span style={{ fontWeight: isVotada ? 700 : 500, color: '#1a1a2e' }}>{isVotada ? '✓ ' : ''}{op.texto}</span>
                     <span style={{ fontWeight: 700, color: '#4971B1', flexShrink: 0 }}>{pct}%</span>
                   </div>
@@ -81,8 +96,8 @@ export default function EnqueteWidget() {
 
             return (
               <button key={op.key} onClick={function() { votar(op.key) }} disabled={enviando} style={{
-                textAlign: 'left', padding: '9px 12px', borderRadius: 8, border: '1px solid #e5e7eb',
-                background: '#fafbfc', fontSize: '0.82rem', color: '#374151', fontWeight: 500,
+                textAlign: 'left', padding: optPad, borderRadius: 8, border: '1px solid #e5e7eb',
+                background: '#fafbfc', fontSize: optFontSize, color: '#374151', fontWeight: 500,
                 cursor: enviando ? 'not-allowed' : 'pointer', transition: 'border-color .15s, background .15s',
               }}
               onMouseEnter={function(e) { e.currentTarget.style.borderColor = '#4971B1'; e.currentTarget.style.background = '#eef3fa' }}
@@ -92,7 +107,7 @@ export default function EnqueteWidget() {
           })}
         </div>
 
-        <p style={{ fontSize: '0.68rem', color: '#9ca3af', marginTop: 10 }}>
+        <p style={{ fontSize: '0.65rem', color: '#9ca3af', marginTop: footerMargin, marginBottom: 0 }}>
           {totalVotos} voto{totalVotos === 1 ? '' : 's'}{votada ? '' : ' · toque numa opção pra votar'}
         </p>
       </div>

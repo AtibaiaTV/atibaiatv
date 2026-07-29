@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 
 var LAT = -23.1165
 var LON = -46.5506
@@ -53,13 +52,12 @@ export default function InfoStrip() {
             <span style={{ color: up ? '#059669' : '#dc2626', fontWeight: 700 }}>{up ? '▲' : '▼'} {Math.abs(pct).toFixed(2)}%</span>
           </span>
         )}
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', marginLeft: 'auto' }}>
           🛣️
           <a href="https://rodovias.motiva.com.br/minas-sp/" target="_blank" rel="noreferrer" style={{ color: '#4b5563' }}>Fernão Dias</a>
           <span style={{ color: '#d1d5db' }}>·</span>
           <a href="https://www.rotadasbandeiras.com.br/" target="_blank" rel="noreferrer" style={{ color: '#4b5563' }}>Dom Pedro I</a>
         </span>
-        <Link to="/participe" style={{ marginLeft: 'auto', color: '#Cd0000', fontWeight: 700, whiteSpace: 'nowrap' }}>📮 Denuncie →</Link>
       </div>
     </div>
   )

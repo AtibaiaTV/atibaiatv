@@ -65,16 +65,16 @@ export default function Home() {
     <>
       {/* BANNER TOPO — billboard, com enquete ao lado */}
       <div style={bannerWrap}>
-        <div className="atv-container atv-billboard-row" style={{ display: 'flex', gap: '1rem', alignItems: 'stretch' }}>
+        <div className="atv-container atv-billboard-row" style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <AdBanner
               type="billboard"
               src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'}
-              href={billboard ? billboard.linkUrl : '#'}
+              href={billboard && billboard.linkUrl ? billboard.linkUrl : '/participe'}
             />
           </div>
-          <div className="atv-billboard-enquete" style={{ width: 300, flexShrink: 0 }}>
-            <EnqueteWidget />
+          <div className="atv-billboard-enquete" style={{ width: 260, flexShrink: 0 }}>
+            <EnqueteWidget compact />
           </div>
         </div>
       </div>

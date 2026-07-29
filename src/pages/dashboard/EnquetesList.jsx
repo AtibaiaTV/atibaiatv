@@ -148,7 +148,9 @@ export default function EnquetesList() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {items.map(function(item) {
-            var opcoesArr = Object.keys(item.opcoes || {}).map(function(k) { return Object.assign({ key: k }, item.opcoes[k]) })
+            var opcoesArr = Object.keys(item.opcoes || {}).map(function(k) { return Object.assign({ key: k }, item.opcoes[k]) }).sort(function(a, b) {
+              return parseInt(a.key.replace('opt_', ''), 10) - parseInt(b.key.replace('opt_', ''), 10)
+            })
             var total = opcoesArr.reduce(function(s, o) { return s + (o.votos || 0) }, 0)
             return (
               <div key={item.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '1.1rem 1.25rem' }}>

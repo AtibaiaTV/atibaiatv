@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 const SIZES = {
   billboard:   { maxWidth: 1920, maxHeight: 180, label: 'Publicidade' },
   leaderboard: { maxWidth: 970,  maxHeight: 180, label: 'Publicidade' },
@@ -29,6 +31,14 @@ export default function AdBanner({ type = 'leaderboard', src = null, video = nul
   }
 
   if (src) {
+    const isInternal = href && href.charAt(0) === '/'
+    if (isInternal) {
+      return (
+        <Link to={href} style={containerStyle}>
+          <img src={src} alt="Publicidade" style={mediaStyle} />
+        </Link>
+      )
+    }
     return (
       <a href={href} target="_blank" rel="noopener noreferrer sponsored" style={containerStyle}>
         <img src={src} alt="Publicidade" style={mediaStyle} />
