@@ -72,4 +72,6 @@ html.atv-underline-links a { text-decoration: underline; }
   .atv-section-pad { padding-top: 1rem; padding-bottom: 1rem; }
   .atv-banner-wrap { padding: 8px 12px; }
   .atv-hide-mobile { display: none !important; }
+  .atv-billboard-row { flex-direction: column; }
+  .atv-billboard-enquete { width: 100% !important; }
 }

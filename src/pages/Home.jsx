@@ -4,6 +4,7 @@ import VideoCard from '../components/VideoCard'
 import ShortVideos from '../components/ShortVideos'
 import TrendingList from '../components/TrendingList'
 import SidebarWidgets from '../components/SidebarWidgets'
+import EnqueteWidget from '../components/EnqueteWidget'
 import AdBanner from '../components/AdBanner'
 import BannerCarousel from '../components/BannerCarousel'
 import useArticles from '../hooks/useArticles'
@@ -62,14 +63,19 @@ export default function Home() {
 
   return (
     <>
-      {/* BANNER TOPO — billboard, mesma largura do conteudo */}
+      {/* BANNER TOPO — billboard, com enquete ao lado */}
       <div style={bannerWrap}>
-        <div className="atv-container">
-          <AdBanner
-            type="billboard"
-            src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'}
-            href={billboard ? billboard.linkUrl : '#'}
-          />
+        <div className="atv-container atv-billboard-row" style={{ display: 'flex', gap: '1rem', alignItems: 'stretch' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <AdBanner
+              type="billboard"
+              src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'}
+              href={billboard ? billboard.linkUrl : '#'}
+            />
+          </div>
+          <div className="atv-billboard-enquete" style={{ width: 300, flexShrink: 0 }}>
+            <EnqueteWidget />
+          </div>
         </div>
       </div>
 
