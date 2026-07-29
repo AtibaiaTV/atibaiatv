@@ -4,7 +4,7 @@ import { db } from '../firebase'
 
 function votoKey(id) { return 'atv-enquete-voto-' + id }
 
-export default function EnqueteWidget({ compact = false }) {
+export default function EnqueteWidget({ compact = false, fillHeight = false }) {
   var enqueteState = useState(null)
   var enquete = enqueteState[0]
   var setEnquete = enqueteState[1]
@@ -69,15 +69,18 @@ export default function EnqueteWidget({ compact = false }) {
   var optFontSize = compact ? '0.74rem' : '0.82rem'
   var footerMargin = compact ? 6 : 10
 
+  var boxed = compact || fillHeight
+
   return (
     <div style={{
       background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden',
-      maxHeight: compact ? 180 : 'none', display: compact ? 'flex' : 'block', flexDirection: 'column',
+      height: fillHeight ? '100%' : 'auto', maxHeight: compact && !fillHeight ? 180 : 'none',
+      display: boxed ? 'flex' : 'block', flexDirection: 'column',
     }}>
       <div style={{ padding: headerPad, borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
         <h3 style={{ fontSize: compact ? '0.7rem' : '0.8rem', fontWeight: 700, color: '#1a1a2e', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>📊 Enquete</h3>
       </div>
-      <div style={{ padding: bodyPad, overflowY: compact ? 'auto' : 'visible', minHeight: 0 }}>
+      <div style={{ padding: bodyPad, overflowY: boxed ? 'auto' : 'visible', minHeight: 0, flex: fillHeight ? 1 : 'none' }}>
         <p style={{ fontSize: questionSize, fontWeight: 600, color: '#1a1a2e', marginBottom: questionMargin, marginTop: 0, lineHeight: 1.35 }}>{enquete.pergunta}</p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: optGap }}>

@@ -50,6 +50,8 @@ html.atv-underline-links a { text-decoration: underline; }
 
 /* Grid helpers */
 .atv-grid-hero { display: grid; grid-template-columns: 2fr 1fr; gap: 2px; }
+.atv-grid-featured { display: grid; grid-template-columns: 2fr 320px; gap: 1rem; align-items: stretch; }
+.atv-grid-sidenews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #e5e7eb; border-radius: 12px; overflow: hidden; }
 .atv-grid-main { display: grid; grid-template-columns: 1fr 340px; gap: 2.5rem; align-items: start; }
 .atv-sidebar-sticky { position: sticky; top: 84px; }
 .atv-grid-article { display: grid; grid-template-columns: 1fr 300px; gap: 2rem; align-items: start; }
@@ -72,6 +74,6 @@ html.atv-underline-links a { text-decoration: underline; }
   .atv-section-pad { padding-top: 1rem; padding-bottom: 1rem; }
   .atv-banner-wrap { padding: 8px 12px; }
   .atv-hide-mobile { display: none !important; }
-  .atv-billboard-row { flex-direction: column; }
-  .atv-billboard-enquete { width: 100% !important; }
+  .atv-grid-featured { grid-template-columns: 1fr; }
+  .atv-grid-sidenews { grid-template-columns: 1fr; }
 }

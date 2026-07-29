@@ -63,34 +63,33 @@ export default function Home() {
 
   return (
     <>
-      {/* BANNER TOPO — billboard, com enquete ao lado */}
+      {/* BANNER TOPO — billboard, sozinho */}
       <div style={bannerWrap}>
-        <div className="atv-container atv-billboard-row" style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <AdBanner
-              type="billboard"
-              src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'}
-              href={billboard && billboard.linkUrl ? billboard.linkUrl : '/participe'}
-            />
-          </div>
-          <div className="atv-billboard-enquete" style={{ width: 260, flexShrink: 0 }}>
-            <EnqueteWidget compact />
-          </div>
+        <div className="atv-container">
+          <AdBanner
+            type="billboard"
+            src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'}
+            href={billboard && billboard.linkUrl ? billboard.linkUrl : '/participe'}
+          />
         </div>
       </div>
 
-      {/* HERO */}
+      {/* HERO — materia principal + enquete ao lado, materias menores abaixo */}
       <div className="atv-container" style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
         {!loading && featured && (
-          <div className="atv-grid-hero" style={{
-            background: '#e5e7eb', borderRadius: 12,
-            overflow: 'hidden', marginBottom: '1.5rem',
-          }}>
-            <div style={{ gridRow: 'span 3' }}>
-              <NewsCard news={featured} featured={true} />
+          <>
+            <div className="atv-grid-featured" style={{ marginBottom: '1rem' }}>
+              <div style={{ background: '#e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
+                <NewsCard news={featured} featured={true} />
+              </div>
+              <div className="atv-featured-enquete">
+                <EnqueteWidget fillHeight />
+              </div>
             </div>
-            {sideNews.map(function(n) { return <NewsCard key={n.id} news={n} /> })}
-          </div>
+            <div className="atv-grid-sidenews">
+              {sideNews.map(function(n) { return <NewsCard key={n.id} news={n} /> })}
+            </div>
+          </>
         )}
         {loading && (
           <div style={{ textAlign: 'center', padding: '4rem', color: '#9ca3af' }}>
