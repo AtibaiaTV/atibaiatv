@@ -8,6 +8,7 @@ import { trackPageView } from '../hooks/usePageViews'
 import NewsCard from '../components/NewsCard'
 import AdBanner from '../components/AdBanner'
 import VideoCard from '../components/VideoCard'
+import SidebarWidgets from '../components/SidebarWidgets'
 
 const CATEGORY_MAP = {
   '/noticias':   'Notícias',
@@ -105,6 +106,7 @@ export default function CategoryPage() {
             </div>
           </div>
           <AdBanner type="square" src={square ? square.mediaUrl : '/banners/prefeitura-abril26/square.gif'} />
+          <SidebarWidgets />
         </aside>
       </div>
     </>

@@ -4,6 +4,7 @@ import VideoCard from '../components/VideoCard'
 import ShortVideos from '../components/ShortVideos'
 import EditoriaCard from '../components/EditoriaCard'
 import TrendingList from '../components/TrendingList'
+import SidebarWidgets from '../components/SidebarWidgets'
 import AdBanner from '../components/AdBanner'
 import BannerCarousel from '../components/BannerCarousel'
 import useArticles from '../hooks/useArticles'
@@ -165,6 +166,9 @@ export default function Home() {
               <VideoCard video={latestVideo} />
             </div>
           )}
+
+          {/* Clima, mercado, rodovias, acessibilidade — nunca deixa a coluna vazia */}
+          <SidebarWidgets />
 
         </aside>
       </div>

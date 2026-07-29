@@ -27,6 +27,11 @@ button { font-family: inherit; cursor: pointer; }
 
 .atv-animate { animation: atv-fade-in .35s ease both; }
 
+/* Acessibilidade: escala de fonte (a maior parte do site usa rem, entao isso escala o texto todo) */
+html.atv-fontsize-grande { font-size: 115%; }
+html.atv-fontsize-maior { font-size: 130%; }
+html.atv-underline-links a { text-decoration: underline; }
+
 /* Grid helpers */
 .atv-grid-hero { display: grid; grid-template-columns: 2fr 1fr; gap: 2px; }
 .atv-grid-main { display: grid; grid-template-columns: 1fr 340px; gap: 2.5rem; }

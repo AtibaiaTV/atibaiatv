@@ -3,6 +3,7 @@ import TopBar    from './components/TopBar'
 import Header    from './components/Header'
 import Ticker    from './components/Ticker'
 import Footer    from './components/Footer'
+import VLibras   from './components/VLibras'
 import Home         from './pages/Home'
 import CategoryPage from './pages/CategoryPage'
 import ArticlePage  from './pages/ArticlePage'
@@ -33,6 +34,7 @@ function PublicLayout() {
         <Outlet />
       </main>
       <Footer />
+      <VLibras />
     </div>
   )
 }
