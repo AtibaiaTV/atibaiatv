@@ -14,9 +14,7 @@ const EDITORIAS_NAV = [
   { to: '/mobilidade',  label: 'Mobilidade'  },
   { to: '/mundo',       label: 'Mundo'       },
   { to: '/noticias',    label: 'Noticias'    },
-  { to: '/participe',   label: 'Participe',  cta: true },
   { to: '/politica',    label: 'Politica'    },
-  { to: '/ranking',     label: 'Ranking'     },
   { to: '/regiao',      label: 'Regiao'      },
   { to: '/saude',       label: 'Saude'       },
   { to: '/seguranca',   label: 'Seguranca'   },
@@ -50,13 +48,6 @@ function renderNavLink(item, pathname) {
         rel="noopener noreferrer"
         className="atv-nav-link"
       >{item.label}</a>
-    )
-  }
-  if (item.cta) {
-    return (
-      <Link key={item.to} to={item.to} className="atv-nav-cta">
-        {item.label}
-      </Link>
     )
   }
   return (
@@ -93,19 +84,24 @@ var css = [
   '.atv-nav-link:hover { color:#cc0000; }',
   '.atv-nav-link.active { color:#cc0000; border-bottom-color:#cc0000; font-weight:700; }',
 
-  /* botao de destaque (participe) */
-  '.atv-nav-cta { margin:0 4px; padding:5px 14px; background:#Cd0000; color:#fff !important; font-size:.76rem; font-weight:700; border-radius:20px; text-decoration:none; white-space:nowrap; transition:background .15s; }',
+  /* grupo de engajamento — separado das editorias por uma borda, sempre visivel */
+  '.atv-engage-group { flex-shrink:0; display:flex; align-items:center; gap:10px; padding-left:20px; margin-left:8px; border-left:1px solid #e5e7eb; height:' + (NAV_ROW_H * 2) + 'px; }',
+  '.atv-nav-cta { padding:7px 16px; background:#Cd0000; color:#fff !important; font-size:.8rem; font-weight:700; border-radius:20px; text-decoration:none; white-space:nowrap; transition:background .15s; }',
   '.atv-nav-cta:hover { background:#a30000; }',
+  '.atv-ranking-link { display:flex; align-items:center; gap:5px; color:#374151; font-size:.79rem; font-weight:600; text-decoration:none; white-space:nowrap; transition:color .15s; }',
+  '.atv-ranking-link:hover { color:#cc0000; }',
+  '.atv-ranking-link.active { color:#cc0000; }',
 
   /* hamburger — escondido no desktop */
-  '.atv-hamburger { display:none; background:none; border:none; padding:8px; cursor:pointer; margin-left:auto; }',
+  '.atv-hamburger { display:none; background:none; border:none; padding:8px; cursor:pointer; margin-left:12px; }',
 
   /* mobile */
   '@media (max-width:900px) {',
   '  .atv-nav-col { display:none; }',
+  '  .atv-engage-group { display:none; }',
   '  .atv-logo-wrap { border-right:none; padding-right:0; height:52px; }',
   '  .atv-header-logo { height:32px !important; }',
-  '  .atv-hamburger { display:flex; flex-direction:column; gap:5px; }',
+  '  .atv-hamburger { display:flex; flex-direction:column; gap:5px; margin-left:auto; }',
   '  .atv-hamburger span { width:22px; height:2px; background:#374151; border-radius:2px; transition:all .2s; display:block; }',
   '  .atv-hamburger.open span:nth-child(1) { transform:translateY(7px) rotate(45deg); }',
   '  .atv-hamburger.open span:nth-child(2) { opacity:0; }',
@@ -117,6 +113,8 @@ var css = [
   '.atv-mobile-menu.open { display:block; }',
   '.atv-mobile-menu a { display:flex; align-items:center; padding:14px 20px; color:#1a1a2e; font-size:.92rem; font-weight:500; border-bottom:1px solid #f3f4f6; text-decoration:none; }',
   '.atv-mobile-menu a:hover { background:#f9fafb; color:#cc0000; }',
+  '.atv-mobile-engage { display:flex; gap:10px; padding:16px 20px; border-bottom:8px solid #f3f4f6; }',
+  '.atv-mobile-engage a { flex:1; justify-content:center; border-radius:8px; border-bottom:none !important; padding:12px; }',
 ].join('\n')
 
 export default function Header() {
@@ -156,6 +154,14 @@ export default function Header() {
             </div>
           </nav>
 
+          {/* Denuncie + Ranking — grupo de engajamento, separado das editorias */}
+          <div className="atv-engage-group">
+            <Link to="/ranking" className={'atv-ranking-link' + (pathname === '/ranking' ? ' active' : '')}>
+              🏆 Ranking
+            </Link>
+            <Link to="/participe" className="atv-nav-cta">📮 Denuncie</Link>
+          </div>
+
           {/* Hamburger mobile */}
           <button
             className={'atv-hamburger' + (menuOpen ? ' open' : '')}
@@ -170,6 +176,14 @@ export default function Header() {
 
       {/* Drawer mobile */}
       <div className={'atv-mobile-menu' + (menuOpen ? ' open' : '')}>
+        <div className="atv-mobile-engage">
+          <Link to="/ranking" onClick={function() { setMenuOpen(false) }} style={{ background: '#f3f4f6', color: '#1a1a2e', fontWeight: 700 }}>
+            🏆 Ranking
+          </Link>
+          <Link to="/participe" onClick={function() { setMenuOpen(false) }} style={{ background: '#Cd0000', color: '#fff', fontWeight: 700 }}>
+            📮 Denuncie
+          </Link>
+        </div>
         {visibleNav.map(function(item) {
           if (item.external) {
             return (
@@ -187,10 +201,8 @@ export default function Header() {
               key={item.to}
               to={item.to}
               onClick={function() { setMenuOpen(false) }}
-              style={item.cta
-                ? { color: '#Cd0000', fontWeight: 700 }
-                : { fontWeight: pathname === item.to ? 700 : 500, color: pathname === item.to ? '#cc0000' : undefined }}
-            >{item.cta ? '📮 ' + item.label : item.label}</Link>
+              style={{ fontWeight: pathname === item.to ? 700 : 500, color: pathname === item.to ? '#cc0000' : undefined }}
+            >{item.label}</Link>
           )
         })}
       </div>
