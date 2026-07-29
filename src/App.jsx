@@ -2,6 +2,7 @@ import { Routes, Route, Outlet } from 'react-router-dom'
 import TopBar    from './components/TopBar'
 import Header    from './components/Header'
 import Ticker    from './components/Ticker'
+import InfoStrip from './components/InfoStrip'
 import Footer    from './components/Footer'
 import VLibras   from './components/VLibras'
 import Home         from './pages/Home'
@@ -30,6 +31,7 @@ function PublicLayout() {
       <TopBar />
       <Header />
       <Ticker />
+      <InfoStrip />
       <main style={{ flex: 1 }}>
         <Outlet />
       </main>

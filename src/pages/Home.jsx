@@ -143,6 +143,9 @@ export default function Home() {
         {/* Sidebar */}
         <aside className="atv-sidebar-sticky" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
+          {/* Clima, mercado, rodovias, acessibilidade — no topo da coluna, mais visivel */}
+          <SidebarWidgets />
+
           {/* 1 square 300x300 rotativo */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <BannerCarousel banners={squareBanners} width={300} height={300} />
@@ -164,9 +167,6 @@ export default function Home() {
               <VideoCard video={latestVideo} />
             </div>
           )}
-
-          {/* Clima, mercado, rodovias, acessibilidade — nunca deixa a coluna vazia */}
-          <SidebarWidgets />
 
         </aside>
       </div>

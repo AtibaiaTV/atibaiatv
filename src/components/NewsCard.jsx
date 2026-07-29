@@ -81,7 +81,7 @@ export default function NewsCard({ news, featured = false, highlight = false }) 
     onMouseEnter={e => { e.currentTarget.style.background = '#fafbfc'; e.currentTarget.style.borderLeftColor = tagStyle.color }}
     onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderLeftColor = 'transparent' }}
     >
-      <Thumb news={news} tagStyle={tagStyle} style={{ width: 200, aspectRatio: '16/10', borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+      <Thumb news={news} tagStyle={tagStyle} style={{ width: 'clamp(88px, 28vw, 200px)', aspectRatio: '16/10', borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <span style={{ fontSize: '0.64rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: tagStyle.color }}>
           {news.category}

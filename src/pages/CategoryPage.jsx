@@ -110,6 +110,7 @@ export default function CategoryPage() {
         </div>
 
         <aside className="atv-sidebar-sticky" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <SidebarWidgets />
           <AdBanner type="square" src={square ? square.mediaUrl : '/banners/prefeitura-abril26/square.gif'} />
           <div>
             <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#Cd0000', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -120,7 +121,6 @@ export default function CategoryPage() {
             </div>
           </div>
           <AdBanner type="square" src={square ? square.mediaUrl : '/banners/prefeitura-abril26/square.gif'} />
-          <SidebarWidgets />
         </aside>
       </div>
     </>

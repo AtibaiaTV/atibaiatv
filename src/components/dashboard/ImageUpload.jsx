@@ -2,33 +2,55 @@ import { useState, useRef } from 'react'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { storage } from '../../firebase'
 
-function matchesAccept(file, accept) {
+var EXT_TO_MIME = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+  webp: 'image/webp', heic: 'image/heic', heif: 'image/heif',
+  mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', m4v: 'video/mp4',
+}
+
+/* alguns navegadores (sobretudo iOS/Safari com fotos HEIC) nao preenchem file.type;
+   nesses casos inferimos pela extensao em vez de rejeitar o arquivo */
+function resolveContentType(file) {
+  if (file.type) return file.type
+  var ext = (file.name.split('.').pop() || '').toLowerCase()
+  return EXT_TO_MIME[ext] || ''
+}
+
+function matchesAccept(contentType, accept) {
   if (!accept || accept === 'image/*,video/*') return true
+  if (!contentType) return true // deixa passar; o input ja filtrou pelo seletor do sistema
   return accept.split(',').map(t => t.trim()).some(t => {
-    if (t.endsWith('/*')) return file.type.startsWith(t.replace('/*', '/'))
-    return file.type === t
+    if (t.endsWith('/*')) return contentType.startsWith(t.replace('/*', '/'))
+    return contentType === t
   })
 }
 
 export default function ImageUpload({ value, onChange, path, accept = 'image/*,video/*' }) {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [error, setError] = useState('')
   const fileRef = useRef()
 
   const handleFile = (file) => {
     if (!file) return
-    if (!matchesAccept(file, accept)) {
-      alert('Arquivo inválido. Use uma imagem (JPG, PNG, GIF).')
+    setError('')
+    const contentType = resolveContentType(file)
+    if (!matchesAccept(contentType, accept)) {
+      setError('Arquivo inválido. Envie uma foto ou um vídeo.')
       return
     }
     setUploading(true)
-    const ext = file.name.split('.').pop()
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
     const storageRef = ref(storage, `${path}/${Date.now()}.${ext}`)
-    const task = uploadBytesResumable(storageRef, file)
+    const task = uploadBytesResumable(storageRef, file, contentType ? { contentType } : undefined)
 
     task.on('state_changed',
       (snap) => setProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-      (err) => { console.error(err); setUploading(false) },
+      (err) => {
+        console.error(err)
+        setUploading(false)
+        setError('Não foi possível enviar o arquivo. Tente novamente.')
+      },
       async () => {
         const url = await getDownloadURL(task.snapshot.ref)
         onChange(url)
@@ -43,7 +65,7 @@ export default function ImageUpload({ value, onChange, path, accept = 'image/*,v
     handleFile(e.dataTransfer.files[0])
   }
 
-  const isVideo = value && (value.includes('.mp4') || value.includes('.webm') || value.includes('.mov'))
+  const isVideo = value && (value.includes('.mp4') || value.includes('.webm') || value.includes('.mov') || value.includes('.m4v'))
 
   return (
     <div>
@@ -78,11 +100,12 @@ export default function ImageUpload({ value, onChange, path, accept = 'image/*,v
         ) : (
           <div>
             <div style={{ fontSize: '2rem', marginBottom: 4 }}>📁</div>
-            <p style={{ fontSize: '0.82rem', color: '#6b7280' }}>Clique ou arraste um arquivo</p>
-            <p style={{ fontSize: '0.68rem', color: '#9ca3af' }}>JPG, PNG, GIF, MP4</p>
+            <p style={{ fontSize: '0.82rem', color: '#6b7280' }}>Toque para escolher uma foto ou vídeo</p>
+            <p style={{ fontSize: '0.68rem', color: '#9ca3af' }}>JPG, PNG, HEIC, GIF, MP4</p>
           </div>
         )}
       </div>
+      {error && <p style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: 6 }}>{error}</p>}
       <input ref={fileRef} type="file" accept={accept} onChange={e => handleFile(e.target.files[0])} style={{ display: 'none' }} />
     </div>
   )
