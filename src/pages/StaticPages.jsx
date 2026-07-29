@@ -62,6 +62,104 @@ export function AnunciePage() {
   )
 }
 
+export function PrivacidadePage() {
+  const secao = { marginBottom: '1.75rem' }
+  const h2 = { fontSize: '1.05rem', fontWeight: 700, color: 'var(--text)', marginBottom: 8 }
+  const p = { color: 'var(--muted)', lineHeight: 1.7, fontSize: '0.92rem' }
+  const li = { color: 'var(--muted)', lineHeight: 1.7, fontSize: '0.92rem', marginBottom: 4 }
+
+  return (
+    <div style={{ maxWidth: 760, margin: '0 auto', padding: '3rem 2rem' }}>
+      <h1 style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Política de Privacidade</h1>
+      <p style={{ ...p, marginBottom: '2rem', fontSize: '0.8rem' }}>Última atualização: julho de 2026</p>
+
+      <div style={secao}>
+        <h2 style={h2}>Quem trata seus dados</h2>
+        <p style={p}>
+          A <b>Atibaia TV</b> ({CONTATO.endereco}) é a controladora dos dados pessoais tratados neste site. Dúvidas ou
+          pedidos relacionados aos seus dados podem ser enviados para{' '}
+          <a href={`mailto:${CONTATO.emailRedacao}`} style={{ color: 'var(--blue)' }}>{CONTATO.emailRedacao}</a>.
+        </p>
+      </div>
+
+      <div style={secao}>
+        <h2 style={h2}>Quais dados coletamos</h2>
+        <ul style={{ paddingLeft: 20, marginBottom: 8 }}>
+          <li style={li}><b>Denúncias enviadas:</b> categoria, descrição, local e, se você enviar, foto ou vídeo.</li>
+          <li style={li}><b>Identificação opcional:</b> nome e telefone/e-mail, só se você optar por preenchê-los.</li>
+          <li style={li}><b>Uso do site:</b> contagem agregada e anônima de visualizações por página, sem identificar quem acessou.</li>
+        </ul>
+        <p style={p}>Não coletamos dados sensíveis (saúde, origem racial, orientação, religião etc.) de forma proposital, e pedimos que você também não os inclua nas descrições enviadas.</p>
+      </div>
+
+      <div style={secao}>
+        <h2 style={h2}>Para que usamos</h2>
+        <ul style={{ paddingLeft: 20 }}>
+          <li style={li}>Receber e avaliar denúncias sobre problemas na cidade.</li>
+          <li style={li}>Publicar, sempre de forma anônima, as denúncias aprovadas no <Link to="/mural" style={{ color: 'var(--blue)' }}>Mural da cidade</Link>.</li>
+          <li style={li}>Manter um ranking interno de colaboradores mais engajados — quando você se identifica, seu nome e telefone completos ficam restritos à nossa equipe; publicamente, só o primeiro nome dos 5 mais engajados aparece no <Link to="/ranking" style={{ color: 'var(--blue)' }}>Ranking</Link>.</li>
+          <li style={li}>Entrar em contato com você sobre a denúncia enviada, caso tenha deixado telefone ou e-mail.</li>
+        </ul>
+      </div>
+
+      <div style={secao}>
+        <h2 style={h2}>Base legal</h2>
+        <p style={p}>
+          Tratamos dados de identificação com base no seu <b>consentimento</b> (art. 7º, I da LGPD), dado ao preencher
+          voluntariamente os campos opcionais do formulário. O conteúdo da denúncia em si é tratado com base no
+          <b> legítimo interesse</b> em zelar por questões de interesse público da cidade (art. 7º, IX).
+        </p>
+      </div>
+
+      <div style={secao}>
+        <h2 style={h2}>Com quem compartilhamos</h2>
+        <p style={p}>
+          Não vendemos nem compartilhamos seus dados com terceiros para fins comerciais. Usamos o Google Firebase
+          como infraestrutura de banco de dados e armazenamento (operador de dados), sujeito às políticas de
+          segurança do Google. Órgãos públicos podem ser acionados quando a denúncia envolver risco à segurança ou
+          exigir encaminhamento oficial.
+        </p>
+      </div>
+
+      <div style={secao}>
+        <h2 style={h2}>Por quanto tempo guardamos</h2>
+        <p style={p}>
+          Mantemos os dados enquanto forem relevantes para acompanhar a denúncia e pelo tempo necessário para fins
+          administrativos internos. Você pode pedir a exclusão antecipada a qualquer momento pelo e-mail acima.
+        </p>
+      </div>
+
+      <div style={secao}>
+        <h2 style={h2}>Seus direitos (Art. 18 da LGPD)</h2>
+        <p style={p}>Você pode solicitar, a qualquer momento e gratuitamente:</p>
+        <ul style={{ paddingLeft: 20 }}>
+          <li style={li}>Confirmação de que tratamos seus dados e acesso a eles</li>
+          <li style={li}>Correção de dados incompletos, inexatos ou desatualizados</li>
+          <li style={li}>Anonimização, bloqueio ou eliminação de dados desnecessários ou tratados em desconformidade</li>
+          <li style={li}>Portabilidade dos dados a outro fornecedor</li>
+          <li style={li}>Eliminação dos dados tratados com base no seu consentimento</li>
+          <li style={li}>Revogação do consentimento a qualquer momento</li>
+        </ul>
+        <p style={p}>Basta enviar o pedido para <a href={`mailto:${CONTATO.emailRedacao}`} style={{ color: 'var(--blue)' }}>{CONTATO.emailRedacao}</a>, informando o telefone ou e-mail usado no envio, pra localizarmos seu registro.</p>
+      </div>
+
+      <div style={secao}>
+        <h2 style={h2}>Segurança</h2>
+        <p style={p}>
+          O acesso aos dados de identificação (nome/telefone) é restrito à equipe da Atibaia TV, autenticada por
+          login próprio. As denúncias enviadas publicamente no mural nunca exibem nome, telefone ou qualquer dado
+          que identifique quem enviou.
+        </p>
+      </div>
+
+      <div style={secao}>
+        <h2 style={h2}>Alterações desta política</h2>
+        <p style={p}>Podemos atualizar esta política eventualmente. A data no topo desta página indica a versão mais recente.</p>
+      </div>
+    </div>
+  )
+}
+
 export function ContatoPage() {
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '3rem 2rem' }}>

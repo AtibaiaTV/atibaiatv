@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collection, getDocs, deleteDoc, doc, updateDoc, orderBy, query } from 'firebase/firestore'
+import { collection, getDocs, deleteDoc, doc, setDoc, updateDoc, orderBy, query } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { DENUNCIA_CATEGORIAS, DENUNCIA_STATUS } from '../../data'
 import { selectStyle } from '../../components/dashboard/DashFormField'
@@ -19,11 +19,18 @@ export default function DenunciasList() {
   var loadingState = useState(true)
   var loading = loadingState[0]
   var setLoading = loadingState[1]
+  var publishedState = useState(function() { return new Set() })
+  var published = publishedState[0]
+  var setPublished = publishedState[1]
 
   async function load() {
     var q = query(collection(db, 'denuncias'), orderBy('createdAt', 'desc'))
     var snap = await getDocs(q)
     setItems(snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()) }))
+
+    var pubSnap = await getDocs(collection(db, 'denuncias_publicas'))
+    setPublished(new Set(pubSnap.docs.map(function(d) { return d.id })))
+
     setLoading(false)
   }
 
@@ -37,7 +44,26 @@ export default function DenunciasList() {
   async function handleDelete(row) {
     if (!window.confirm('Excluir esta denúncia?')) return
     await deleteDoc(doc(db, 'denuncias', row.id))
+    if (published.has(row.id)) await deleteDoc(doc(db, 'denuncias_publicas', row.id))
     load()
+  }
+
+  /* copia so os dados seguros pro publico (sem nome/contato) numa colecao separada,
+     que e a unica com leitura publica liberada nas regras do Firestore */
+  async function handlePublish(row) {
+    await setDoc(doc(db, 'denuncias_publicas', row.id), {
+      category: row.category || '',
+      description: row.description || '',
+      location: row.location || '',
+      mediaUrl: row.mediaUrl || '',
+      createdAt: row.createdAt || null,
+    })
+    setPublished(function(set) { return new Set(set).add(row.id) })
+  }
+
+  async function handleUnpublish(row) {
+    await deleteDoc(doc(db, 'denuncias_publicas', row.id))
+    setPublished(function(set) { var next = new Set(set); next.delete(row.id); return next })
   }
 
   if (loading) return <div style={{ textAlign: 'center', padding: '4rem', color: '#6b7280' }}>Carregando...</div>
@@ -60,6 +86,7 @@ export default function DenunciasList() {
             var st = statusInfo(row.status)
             var when = row.createdAt && row.createdAt.toDate ? row.createdAt.toDate().toLocaleString('pt-BR') : '—'
             var isVideo = row.mediaUrl && /\.(mp4|webm|mov)$/i.test(row.mediaUrl)
+            var isPublished = published.has(row.id)
 
             return (
               <div key={row.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '1rem 1.25rem', display: 'flex', gap: 16 }}>
@@ -79,6 +106,7 @@ export default function DenunciasList() {
                       {cat.icon} {cat.label}
                     </span>
                     {row.location && <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>📍 {row.location}</span>}
+                    {isPublished && <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '3px 9px', borderRadius: 12 }}>🌐 No mural</span>}
                     <span style={{ fontSize: '0.72rem', color: '#9ca3af', marginLeft: 'auto' }}>{when}</span>
                   </div>
 
@@ -90,10 +118,23 @@ export default function DenunciasList() {
                     </p>
                   )}
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <select value={row.status || 'novo'} onChange={function(e) { handleStatusChange(row, e.target.value) }} style={Object.assign({}, selectStyle, { width: 'auto', padding: '6px 10px', fontSize: '0.78rem', background: st.bg, color: st.color, fontWeight: 600, border: 'none' })}>
                       {DENUNCIA_STATUS.map(function(s) { return <option key={s.value} value={s.value}>{s.label}</option> })}
                     </select>
+
+                    {isPublished ? (
+                      <button onClick={function() { handleUnpublish(row) }} style={{
+                        padding: '6px 12px', borderRadius: 6, border: '1px solid #e5e7eb',
+                        background: '#fff', color: '#6b7280', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 500,
+                      }}>Remover do mural</button>
+                    ) : (
+                      <button onClick={function() { handlePublish(row) }} style={{
+                        padding: '6px 12px', borderRadius: 6, border: '1px solid #bbf7d0',
+                        background: '#f0fdf4', color: '#059669', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600,
+                      }}>Publicar no mural</button>
+                    )}
+
                     <button onClick={function() { handleDelete(row) }} style={{
                       padding: '6px 12px', borderRadius: 6, border: '1px solid #fecaca',
                       background: '#fff', color: '#dc2626', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 500,

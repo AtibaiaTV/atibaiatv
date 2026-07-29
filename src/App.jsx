@@ -10,7 +10,8 @@ import CategoryPage from './pages/CategoryPage'
 import ArticlePage  from './pages/ArticlePage'
 import Denuncia     from './pages/Denuncia'
 import Ranking      from './pages/Ranking'
-import { SobrePage, AnunciePage, ContatoPage } from './pages/StaticPages'
+import Mural        from './pages/Mural'
+import { SobrePage, AnunciePage, ContatoPage, PrivacidadePage } from './pages/StaticPages'
 
 import ProtectedRoute    from './components/dashboard/ProtectedRoute'
 import DashboardLogin    from './pages/dashboard/DashboardLogin'
@@ -67,10 +68,12 @@ export default function App() {
         <Route path="/horoscopo" element={<CategoryPage />} />
         <Route path="/participe" element={<Denuncia />} />
         <Route path="/ranking"   element={<Ranking />} />
+        <Route path="/mural"     element={<Mural />} />
         <Route path="/artigo/:id" element={<ArticlePage />} />
         <Route path="/sobre"      element={<SobrePage />} />
         <Route path="/anuncie"    element={<AnunciePage />} />
         <Route path="/contato"    element={<ContatoPage />} />
+        <Route path="/privacidade" element={<PrivacidadePage />} />
       </Route>
 
       {/* Dashboard */}

@@ -6,6 +6,7 @@ const LINKS = [
   ['Início', '/'], ['Notícias', '/noticias'], ['Cultura', '/cultura'],
   ['Eventos', '/eventos'], ['Esportes', '/esportes'], ['Turismo', '/turismo'],
   ['Economia', '/economia'], ['Sobre', '/sobre'], ['Anuncie', '/anuncie'], ['Contato', '/contato'],
+  ['Mural', '/mural'], ['Privacidade', '/privacidade'],
 ]
 
 const SOCIAL = [

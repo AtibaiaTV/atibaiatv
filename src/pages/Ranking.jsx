@@ -18,7 +18,9 @@ export default function Ranking() {
   useEffect(function() { trackPageView('ranking') }, [])
 
   useEffect(function() {
-    var q = query(collection(db, 'participantes'), orderBy('totalPoints', 'desc'), limit(30))
+    /* colecao publica: so primeiro nome + pontos, sem telefone/nome completo (isso fica
+       restrito ao dashboard interno). Mostra so o top 5, como combinado. */
+    var q = query(collection(db, 'ranking_publico'), orderBy('totalPoints', 'desc'), limit(5))
     var unsub = onSnapshot(q, function(snap) {
       setList(snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()) }))
       setLoading(false)
@@ -32,7 +34,8 @@ export default function Ranking() {
         <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🏆</div>
         <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>Ranking da comunidade</h1>
         <p style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: 1.6, maxWidth: 480, margin: '0 auto' }}>
-          Quem mais ajuda a cuidar de Atibaia enviando fotos, vídeos e denúncias de problemas na cidade.
+          Os 5 que mais ajudam a cuidar de Atibaia enviando fotos, vídeos e denúncias de problemas na cidade.
+          Só o primeiro nome aparece — as denúncias em si continuam sempre anônimas.
         </p>
         <Link to="/participe" style={{
           display: 'inline-block', marginTop: 16, padding: '10px 22px', borderRadius: 8,
@@ -63,7 +66,7 @@ export default function Ranking() {
                   {nivel.icon}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, color: '#1a1a2e', fontSize: '0.92rem' }}>{p.displayName || 'Anônimo'}</div>
+                  <div style={{ fontWeight: 700, color: '#1a1a2e', fontSize: '0.92rem' }}>{p.firstName || 'Anônimo'}</div>
                   <div style={{ fontSize: '0.72rem', color: nivel.color, fontWeight: 600 }}>{nivel.label} · {p.totalEnvios || 0} envio{(p.totalEnvios || 0) === 1 ? '' : 's'}</div>
                 </div>
                 <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1a1a2e', flexShrink: 0 }}>{p.totalPoints || 0}<span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#9ca3af' }}> pts</span></div>

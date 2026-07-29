@@ -154,8 +154,11 @@ export default function Header() {
             </div>
           </nav>
 
-          {/* Denuncie + Ranking — grupo de engajamento, separado das editorias */}
+          {/* Denuncie + Mural + Ranking — grupo de engajamento, separado das editorias */}
           <div className="atv-engage-group">
+            <Link to="/mural" className={'atv-ranking-link' + (pathname === '/mural' ? ' active' : '')}>
+              🖼️ Mural
+            </Link>
             <Link to="/ranking" className={'atv-ranking-link' + (pathname === '/ranking' ? ' active' : '')}>
               🏆 Ranking
             </Link>
@@ -177,6 +180,9 @@ export default function Header() {
       {/* Drawer mobile */}
       <div className={'atv-mobile-menu' + (menuOpen ? ' open' : '')}>
         <div className="atv-mobile-engage">
+          <Link to="/mural" onClick={function() { setMenuOpen(false) }} style={{ background: '#f3f4f6', color: '#1a1a2e', fontWeight: 700 }}>
+            🖼️ Mural
+          </Link>
           <Link to="/ranking" onClick={function() { setMenuOpen(false) }} style={{ background: '#f3f4f6', color: '#1a1a2e', fontWeight: 700 }}>
             🏆 Ranking
           </Link>
