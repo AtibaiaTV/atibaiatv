@@ -147,37 +147,58 @@ export const RECENT_VIDEOS = [
 ]
 
 // ─── DENUNCIAS DA CIDADE ───────────────────────────────────────────────────────
+// canal: orgao oficial responsavel por resolver de fato o problema. Nosso formulario
+// tem finalidade jornalistica -- registra o relato pra eventual materia/acompanhamento,
+// mas quem resolve e sempre o canal oficial, por isso ele aparece pra toda categoria.
 export const DENUNCIA_CATEGORIAS = [
-  { value: 'buraco',     label: 'Buraco na via',              icon: '🕳️', color: '#b45309' },
-  { value: 'agua',       label: 'Falta de água',               icon: '💧', color: '#0891b2' },
-  { value: 'iluminacao', label: 'Iluminação pública apagada',  icon: '💡', color: '#7c3aed' },
-  { value: 'energia',    label: 'Falta de energia',            icon: '⚡', color: '#c47a00' },
-  { value: 'animais',    label: 'Maus-tratos a animais',       icon: '🐾', color: '#dc2626' },
-  { value: 'incendio',   label: 'Incêndio',                    icon: '🔥', color: '#Cd0000' },
-  { value: 'barulho',    label: 'Barulho / perturbação do sossego', icon: '🔊', color: '#4971B1' },
+  { value: 'buraco',     label: 'Buraco na via',              icon: '🕳️', color: '#b45309',
+    canal: { nome: 'Ouvidoria Geral de Atibaia', numero: '(11) 4418-7800 (ramal 05)', descricao: 'Ou WhatsApp (11) 95610-4538.' } },
+  { value: 'lixo',       label: 'Lixo acumulado / limpeza urbana', icon: '🗑️', color: '#65a30d',
+    canal: { nome: 'Ouvidoria Geral de Atibaia', numero: '(11) 4418-7800 (ramal 05)', descricao: 'Ou WhatsApp (11) 95610-4538.' } },
+  { value: 'iluminacao', label: 'Iluminação pública apagada',  icon: '💡', color: '#7c3aed',
+    canal: { nome: 'Ouvidoria Geral de Atibaia', numero: '(11) 4418-7800 (ramal 05)', descricao: 'Ou WhatsApp (11) 95610-4538.' } },
+  { value: 'agua',       label: 'Falta de água / saneamento',  icon: '💧', color: '#0891b2',
+    canal: { nome: 'SAAE Atibaia (Saneamento Ambiental)', numero: '0800-0112-195', descricao: 'Ou (11) 4414-3500.' } },
+  { value: 'energia',    label: 'Falta de energia',            icon: '⚡', color: '#c47a00',
+    canal: { nome: 'Neoenergia Elektro', numero: '0800-701-0102', descricao: 'Ou 0800-110135.' } },
+  { value: 'saude_ubs',  label: 'Problemas em UBS / postos de saúde', icon: '🏥', color: '#059669',
+    canal: { nome: 'Ouvidoria da Saúde de Atibaia', numero: '(11) 4414-3344', descricao: 'Ou SUS Nacional 136.' } },
+  { value: 'educacao',   label: 'Problemas em escolas / creches', icon: '🏫', color: '#2563eb',
+    canal: { nome: 'Ouvidoria da Educação de Atibaia', numero: '(11) 4414-3455', descricao: '' } },
+  { value: 'animais',    label: 'Maus-tratos a animais',       icon: '🐾', color: '#dc2626',
+    canal: { nome: 'Guarda Civil Municipal / Ouvidoria', numero: '153', descricao: 'Ou Ouvidoria Geral (11) 4418-7800.' } },
+  { value: 'incendio',   label: 'Incêndio / acidentes graves',  icon: '🔥', color: '#Cd0000',
+    canal: { nome: 'Corpo de Bombeiros de Atibaia', numero: '193', descricao: 'Ou (11) 4412-6262.' } },
+  { value: 'alagamento', label: 'Alagamentos / desabamentos',  icon: '🌊', color: '#0e7490',
+    canal: { nome: 'Defesa Civil de Atibaia', numero: '199', descricao: 'Ou (11) 4414-3967.' } },
+  { value: 'barulho',    label: 'Barulho / perturbação do sossego', icon: '🔊', color: '#4971B1',
+    canal: { nome: 'Guarda Civil Municipal (GCM)', numero: '153', descricao: 'Ou (11) 4413-0127.' } },
+  { value: 'emergencia_medica', label: 'Emergência médica',    icon: '🚑', color: '#Cd0000',
+    canal: { nome: 'SAMU', numero: '192', descricao: 'Ou (11) 4882-9840.' } },
+  { value: 'crimes',     label: 'Crimes em geral / roubos',    icon: '🚨', color: '#1f2937',
+    canal: { nome: 'Polícia Militar / Polícia Civil', numero: '190', descricao: 'Ou Delegacia de Atibaia (11) 4412-9511.' } },
 
-  /* categorias sensiveis: alem de virar denuncia no site, mostram um canal oficial
-     especializado no formulario, porque essas situacoes podem exigir atendimento
-     imediato que o fluxo normal do site nao supre */
+  /* categorias sensiveis: alem do canal oficial, mostram um alerta mais forte no
+     formulario e nunca podem ser publicadas no mural (mesmo anonimas) */
   {
     value: 'violencia_mulher', label: 'Violência contra a mulher', icon: '🆘', color: '#a3195b', sensivel: true,
-    canal: { nome: 'Ligue 180 — Central de Atendimento à Mulher', numero: '180', descricao: 'Gratuito, 24h, todos os dias. Também atende por ligue180.mdh.gov.br.' },
+    canal: { nome: 'Centro de Referência da Mulher (CRM) / Ligue 180', numero: '(11) 4402-2716', descricao: 'Ou Central Nacional 180, gratuita e 24h.' },
   },
   {
     value: 'violencia_infantil', label: 'Violência contra criança/adolescente', icon: '🆘', color: '#a3195b', sensivel: true,
-    canal: { nome: 'Disque 100 — Direitos Humanos', numero: '100', descricao: 'Gratuito, 24h, todos os dias. Também atende por disque100.mdh.gov.br.' },
+    canal: { nome: 'Disque 100 — Direitos Humanos', numero: '100', descricao: 'Gratuito, 24h, todos os dias.' },
   },
   {
     value: 'violencia_idoso', label: 'Violência contra o idoso', icon: '🆘', color: '#a3195b', sensivel: true,
-    canal: { nome: 'Disque 100 — Direitos Humanos', numero: '100', descricao: 'Gratuito, 24h, todos os dias. Também atende por disque100.mdh.gov.br.' },
+    canal: { nome: 'Disque Direitos Humanos / GCM', numero: '100', descricao: 'Ou Guarda Municipal 153.' },
   },
   {
     value: 'lgbtfobia', label: 'LGBTfobia', icon: '🆘', color: '#a3195b', sensivel: true,
-    canal: { nome: 'Disque 100 — Direitos Humanos', numero: '100', descricao: 'Gratuito, 24h, todos os dias. Também atende por disque100.mdh.gov.br.' },
+    canal: { nome: 'Disque 100 — Direitos Humanos', numero: '100', descricao: 'Gratuito, 24h, todos os dias.' },
   },
   {
     value: 'racismo', label: 'Racismo / discriminação', icon: '🆘', color: '#a3195b', sensivel: true,
-    canal: { nome: 'Disque 100 — Direitos Humanos', numero: '100', descricao: 'Gratuito, 24h, todos os dias. Também atende por disque100.mdh.gov.br.' },
+    canal: { nome: 'Disque 100 — Direitos Humanos', numero: '100', descricao: 'Gratuito, 24h, todos os dias.' },
   },
 
   { value: 'outro',      label: 'Outro',                       icon: '📌', color: '#6b7280' },

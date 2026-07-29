@@ -142,8 +142,12 @@ export default function Denuncia() {
     <div className="atv-container" style={{ padding: '2.5rem 1rem 3.5rem', maxWidth: 640, margin: '0 auto' }}>
       <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>Envie sua denúncia</h1>
       <p style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 24 }}>
-        Viu um problema na cidade — buraco na via, falta d'água, iluminação apagada, maus-tratos a animais,
-        incêndio, barulho? Mande foto ou vídeo e conte pra gente.
+        Viu um problema na cidade — infraestrutura, saúde, educação, segurança ou situações que exigem atenção
+        especial? Escolha a categoria mais próxima, mande foto ou vídeo se puder, e conte pra gente.
+      </p>
+      <p style={{ background: '#fff7e0', border: '1px solid #ffe6a3', borderRadius: 10, padding: '0.75rem 1rem', color: '#7a5c00', fontSize: '0.82rem', lineHeight: 1.6, marginBottom: 12, fontWeight: 600 }}>
+        ⚠️ Este canal tem finalidade jornalística — a Atibaia TV registra e pode acompanhar o caso, mas quem
+        resolve de fato é sempre o órgão oficial responsável. Ao escolher a categoria abaixo, mostramos o canal certo pra acionar.
       </p>
       <p style={{ background: '#eef3fa', border: '1px solid #d7e3f4', borderRadius: 10, padding: '0.75rem 1rem', color: '#374151', fontSize: '0.82rem', lineHeight: 1.6, marginBottom: 24 }}>
         🔒 Sua denúncia <b>sempre aparece anônima</b> no site, com nome ou sem nome. Mas se você se identificar,
@@ -167,13 +171,26 @@ export default function Denuncia() {
               🆘 Para esse tipo de situação, procure primeiro o canal especializado:
             </p>
             <p style={{ fontSize: '0.88rem', color: '#374151', marginBottom: 4 }}>
-              <b>{categoriaSelecionada.canal.nome}:</b>{' '}
-              <a href={'tel:' + categoriaSelecionada.canal.numero} style={{ color: '#9d174d', fontWeight: 700 }}>ligar {categoriaSelecionada.canal.numero}</a>
+              <b>{categoriaSelecionada.canal.nome}:</b> {categoriaSelecionada.canal.numero}
             </p>
             <p style={{ fontSize: '0.76rem', color: '#6b7280', marginBottom: 8 }}>{categoriaSelecionada.canal.descricao}</p>
             <p style={{ fontSize: '0.76rem', color: '#6b7280' }}>
               Em caso de perigo imediato, ligue <b>190</b> (Polícia Militar) ou <b>192</b> (SAMU).
               Você também pode continuar e nos contar aqui — isso ajuda a equipe a acompanhar o caso, mas não substitui os canais acima.
+            </p>
+          </div>
+        )}
+
+        {categoriaSelecionada && !categoriaSelecionada.sensivel && categoriaSelecionada.canal && (
+          <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.9rem 1.1rem', marginBottom: '1.25rem' }}>
+            <p style={{ fontSize: '0.8rem', color: '#374151', marginBottom: 2 }}>
+              📞 Canal oficial pra resolver esse tipo de problema: <b>{categoriaSelecionada.canal.nome}</b> — {categoriaSelecionada.canal.numero}
+            </p>
+            {categoriaSelecionada.canal.descricao && (
+              <p style={{ fontSize: '0.74rem', color: '#9ca3af' }}>{categoriaSelecionada.canal.descricao}</p>
+            )}
+            <p style={{ fontSize: '0.74rem', color: '#9ca3af', marginTop: 4 }}>
+              Enviar aqui também ajuda: sua denúncia pode virar matéria e dar mais visibilidade ao problema.
             </p>
           </div>
         )}
