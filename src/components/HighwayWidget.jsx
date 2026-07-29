@@ -1,6 +1,6 @@
 var RODOVIAS = [
-  { nome: 'Rodovia Fernão Dias (BR-381)', href: 'https://www.arteris.com.br/fernao-dias/', concessionaria: 'Arteris' },
-  { nome: 'Rodovia Dom Pedro I (SP-065)', href: 'https://www.rotadasbandeiras.com.br/', concessionaria: 'Rota das Bandeiras' },
+  { nome: 'Rodovia Fernão Dias (BR-381)', href: 'https://rodovias.motiva.com.br/minas-sp/', concessionaria: 'Motiva', contato: '0800 283 0381' },
+  { nome: 'Rodovia Dom Pedro I (SP-065)', href: 'https://www.rotadasbandeiras.com.br/', concessionaria: 'Rota das Bandeiras', contato: '0800 770 8070' },
 ]
 
 export default function HighwayWidget() {
@@ -18,7 +18,7 @@ export default function HighwayWidget() {
             }}>
               <div>
                 <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1a1a2e' }}>{r.nome}</div>
-                <div style={{ fontSize: '0.68rem', color: '#9ca3af' }}>{r.concessionaria} — site oficial</div>
+                <div style={{ fontSize: '0.68rem', color: '#9ca3af' }}>{r.concessionaria} · tráfego ao vivo no app/site · {r.contato}</div>
               </div>
               <span style={{ color: '#4971B1', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0 }}>Ver →</span>
             </a>
@@ -28,8 +28,8 @@ export default function HighwayWidget() {
           display: 'block', marginTop: 10, fontSize: '0.72rem', color: '#4971B1', textDecoration: 'none',
         }}>ARTESP — situação geral das rodovias de SP →</a>
         <p style={{ fontSize: '0.65rem', color: '#c4c8cf', marginTop: 10, lineHeight: 1.4 }}>
-          Não há uma fonte pública gratuita de tráfego em tempo real destas rodovias — os links acima levam
-          direto às concessionárias e à ARTESP.
+          As concessionárias não oferecem uma API pública — o tráfego ao vivo delas fica no app e site próprios.
+          A ARTESP tem uma API, mas exige cadastro e chave de acesso.
         </p>
       </div>
     </div>
