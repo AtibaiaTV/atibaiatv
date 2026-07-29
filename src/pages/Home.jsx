@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import NewsCard from '../components/NewsCard'
 import VideoCard from '../components/VideoCard'
 import ShortVideos from '../components/ShortVideos'
-import EditoriaCard from '../components/EditoriaCard'
 import TrendingList from '../components/TrendingList'
 import SidebarWidgets from '../components/SidebarWidgets'
 import AdBanner from '../components/AdBanner'
@@ -11,7 +10,6 @@ import useArticles from '../hooks/useArticles'
 import useVideos from '../hooks/useVideos'
 import useBanners from '../hooks/useBanners'
 import { trackPageView } from '../hooks/usePageViews'
-import { EDITORIAS } from '../data'
 
 var bannerWrap = {
   background: '#f4f5f7',
@@ -19,8 +17,6 @@ var bannerWrap = {
   borderBottom: '1px solid #e5e7eb',
   padding: '10px 0',
 }
-
-var DESTAQUES_SLUGS = ['noticias', 'cidade', 'seguranca', 'economia', 'esportes', 'cultura', 'eventos', 'zeladoria']
 
 export default function Home() {
   var articlesData = useArticles()
@@ -48,7 +44,6 @@ export default function Home() {
   var latestVideo  = videos[0] || null
   var shortVideos  = videos.filter(function(v) { return v.format === 'short' })
   var maisLidas    = articles.slice(0, 6)
-  var destaques    = DESTAQUES_SLUGS.map(function(slug) { return EDITORIAS.find(function(e) { return e.slug === slug }) }).filter(Boolean)
 
   /* usa leaderboard dedicado; se não houver, usa o primeiro billboard de vídeo */
   var leaderVideoSrc = (leaderboard && leaderboard.mediaType === 'video')
@@ -90,20 +85,6 @@ export default function Home() {
             Carregando noticias...
           </div>
         )}
-      </div>
-
-      {/* EDITORIAS — grade colorida de atalhos, usa a largura toda */}
-      <div className="atv-container" style={{ paddingBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1rem' }}>
-          <h2 style={{
-            fontSize: '0.85rem', fontWeight: 700, color: '#1a1a2e',
-            textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0,
-          }}>Explore por editoria</h2>
-          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
-        </div>
-        <div className="atv-grid-editorias">
-          {destaques.map(function(ed) { return <EditoriaCard key={ed.slug} editoria={ed} /> })}
-        </div>
       </div>
 
       {/* VIDEOS CURTOS — carrossel vertical */}
