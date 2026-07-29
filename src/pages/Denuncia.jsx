@@ -41,6 +41,8 @@ export default function Denuncia() {
 
   function set(key, val) { setForm(function(f) { return Object.assign({}, f, { [key]: val }) }) }
 
+  var categoriaSelecionada = DENUNCIA_CATEGORIAS.find(function(c) { return c.value === form.category })
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!form.category || !form.description) {
@@ -158,6 +160,23 @@ export default function Denuncia() {
             })}
           </select>
         </DashFormField>
+
+        {categoriaSelecionada && categoriaSelecionada.sensivel && (
+          <div style={{ background: '#fdf2f8', border: '1px solid #fbcfe8', borderRadius: 10, padding: '1rem 1.1rem', marginBottom: '1.25rem' }}>
+            <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#9d174d', marginBottom: 6 }}>
+              🆘 Para esse tipo de situação, procure primeiro o canal especializado:
+            </p>
+            <p style={{ fontSize: '0.88rem', color: '#374151', marginBottom: 4 }}>
+              <b>{categoriaSelecionada.canal.nome}:</b>{' '}
+              <a href={'tel:' + categoriaSelecionada.canal.numero} style={{ color: '#9d174d', fontWeight: 700 }}>ligar {categoriaSelecionada.canal.numero}</a>
+            </p>
+            <p style={{ fontSize: '0.76rem', color: '#6b7280', marginBottom: 8 }}>{categoriaSelecionada.canal.descricao}</p>
+            <p style={{ fontSize: '0.76rem', color: '#6b7280' }}>
+              Em caso de perigo imediato, ligue <b>190</b> (Polícia Militar) ou <b>192</b> (SAMU).
+              Você também pode continuar e nos contar aqui — isso ajuda a equipe a acompanhar o caso, mas não substitui os canais acima.
+            </p>
+          </div>
+        )}
 
         <DashFormField label="Local do ocorrido" hint="Rua, bairro ou ponto de referência">
           <input value={form.location} onChange={function(e) { set('location', e.target.value) }} style={inputStyle} placeholder="Ex: Rua das Flores, Jardim Imperial" />

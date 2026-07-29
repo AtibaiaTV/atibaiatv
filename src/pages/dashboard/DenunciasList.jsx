@@ -51,6 +51,7 @@ export default function DenunciasList() {
   /* copia so os dados seguros pro publico (sem nome/contato) numa colecao separada,
      que e a unica com leitura publica liberada nas regras do Firestore */
   async function handlePublish(row) {
+    if (categoriaInfo(row.category).sensivel) return // trava de seguranca: nunca publica categoria sensivel
     await setDoc(doc(db, 'denuncias_publicas', row.id), {
       category: row.category || '',
       description: row.description || '',
@@ -123,7 +124,11 @@ export default function DenunciasList() {
                       {DENUNCIA_STATUS.map(function(s) { return <option key={s.value} value={s.value}>{s.label}</option> })}
                     </select>
 
-                    {isPublished ? (
+                    {cat.sensivel ? (
+                      <span style={{ fontSize: '0.72rem', color: '#9d174d', fontWeight: 600 }} title="Categoria sensivel: nao pode ser publicada no mural publico">
+                        🔒 Categoria sensível — não publicável no mural
+                      </span>
+                    ) : isPublished ? (
                       <button onClick={function() { handleUnpublish(row) }} style={{
                         padding: '6px 12px', borderRadius: 6, border: '1px solid #e5e7eb',
                         background: '#fff', color: '#6b7280', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 500,

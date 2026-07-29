@@ -155,6 +155,31 @@ export const DENUNCIA_CATEGORIAS = [
   { value: 'animais',    label: 'Maus-tratos a animais',       icon: '🐾', color: '#dc2626' },
   { value: 'incendio',   label: 'Incêndio',                    icon: '🔥', color: '#Cd0000' },
   { value: 'barulho',    label: 'Barulho / perturbação do sossego', icon: '🔊', color: '#4971B1' },
+
+  /* categorias sensiveis: alem de virar denuncia no site, mostram um canal oficial
+     especializado no formulario, porque essas situacoes podem exigir atendimento
+     imediato que o fluxo normal do site nao supre */
+  {
+    value: 'violencia_mulher', label: 'Violência contra a mulher', icon: '🆘', color: '#a3195b', sensivel: true,
+    canal: { nome: 'Ligue 180 — Central de Atendimento à Mulher', numero: '180', descricao: 'Gratuito, 24h, todos os dias. Também atende por ligue180.mdh.gov.br.' },
+  },
+  {
+    value: 'violencia_infantil', label: 'Violência contra criança/adolescente', icon: '🆘', color: '#a3195b', sensivel: true,
+    canal: { nome: 'Disque 100 — Direitos Humanos', numero: '100', descricao: 'Gratuito, 24h, todos os dias. Também atende por disque100.mdh.gov.br.' },
+  },
+  {
+    value: 'violencia_idoso', label: 'Violência contra o idoso', icon: '🆘', color: '#a3195b', sensivel: true,
+    canal: { nome: 'Disque 100 — Direitos Humanos', numero: '100', descricao: 'Gratuito, 24h, todos os dias. Também atende por disque100.mdh.gov.br.' },
+  },
+  {
+    value: 'lgbtfobia', label: 'LGBTfobia', icon: '🆘', color: '#a3195b', sensivel: true,
+    canal: { nome: 'Disque 100 — Direitos Humanos', numero: '100', descricao: 'Gratuito, 24h, todos os dias. Também atende por disque100.mdh.gov.br.' },
+  },
+  {
+    value: 'racismo', label: 'Racismo / discriminação', icon: '🆘', color: '#a3195b', sensivel: true,
+    canal: { nome: 'Disque 100 — Direitos Humanos', numero: '100', descricao: 'Gratuito, 24h, todos os dias. Também atende por disque100.mdh.gov.br.' },
+  },
+
   { value: 'outro',      label: 'Outro',                       icon: '📌', color: '#6b7280' },
 ]
 

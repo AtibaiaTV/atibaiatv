@@ -47,6 +47,7 @@ export default function CategoryPage() {
   const rest = news.slice(1)
   const billboard = getBanner('billboard')
   const square = getBanner('square')
+  const leaderboard = getBanner('leaderboard')
 
   useEffect(() => { trackPageView('category-' + slug) }, [slug])
   useEffect(() => { setVisibleCount(PAGE_SIZE) }, [slug])
@@ -104,9 +105,15 @@ export default function CategoryPage() {
               )}
             </>
           )}
-          <div style={{ marginTop: '1.5rem' }}>
-            <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
-          </div>
+          {leaderboard && (
+            <div style={{ marginTop: '1.5rem' }}>
+              <AdBanner
+                type="leaderboard"
+                src={leaderboard.mediaType !== 'video' ? leaderboard.mediaUrl : null}
+                video={leaderboard.mediaType === 'video' ? leaderboard.mediaUrl : null}
+              />
+            </div>
+          )}
         </div>
 
         <aside className="atv-sidebar-sticky" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

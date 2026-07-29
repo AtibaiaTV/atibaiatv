@@ -27,7 +27,12 @@ export default function Mural() {
   useEffect(function() {
     var q = query(collection(db, 'denuncias_publicas'), orderBy('createdAt', 'desc'))
     var unsub = onSnapshot(q, function(snap) {
-      setItems(snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()) }))
+      /* trava extra: nunca exibe categorias sensiveis no mural, mesmo que tenham
+         sido publicadas por engano */
+      var docs = snap.docs
+        .map(function(d) { return Object.assign({ id: d.id }, d.data()) })
+        .filter(function(item) { return !categoriaInfo(item.category).sensivel })
+      setItems(docs)
       setLoading(false)
     }, function() { setLoading(false) })
     return unsub
