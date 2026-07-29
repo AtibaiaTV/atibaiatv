@@ -70,14 +70,17 @@ export default function EnqueteWidget({ compact = false }) {
   var footerMargin = compact ? 6 : 10
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden' }}>
-      <div style={{ padding: headerPad, borderBottom: '1px solid #f3f4f6' }}>
+    <div style={{
+      background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden',
+      maxHeight: compact ? 180 : 'none', display: compact ? 'flex' : 'block', flexDirection: 'column',
+    }}>
+      <div style={{ padding: headerPad, borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
         <h3 style={{ fontSize: compact ? '0.7rem' : '0.8rem', fontWeight: 700, color: '#1a1a2e', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>📊 Enquete</h3>
       </div>
-      <div style={{ padding: bodyPad }}>
+      <div style={{ padding: bodyPad, overflowY: compact ? 'auto' : 'visible', minHeight: 0 }}>
         <p style={{ fontSize: questionSize, fontWeight: 600, color: '#1a1a2e', marginBottom: questionMargin, marginTop: 0, lineHeight: 1.35 }}>{enquete.pergunta}</p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: optGap, maxHeight: compact ? 150 : 'none', overflowY: compact ? 'auto' : 'visible' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: optGap }}>
           {opcoesArr.map(function(op) {
             var pct = totalVotos > 0 ? Math.round(((op.votos || 0) / totalVotos) * 100) : 0
             var isVotada = votada === op.key
