@@ -8,6 +8,10 @@ var EXT_TO_MIME = {
   mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', m4v: 'video/mp4',
 }
 
+var STALL_TIMEOUT_MS = 25000
+var MAX_DIMENSION = 1600
+var JPEG_QUALITY = 0.82
+
 /* alguns navegadores (sobretudo iOS/Safari com fotos HEIC) nao preenchem file.type;
    nesses casos inferimos pela extensao em vez de rejeitar o arquivo */
 function resolveContentType(file) {
@@ -25,33 +29,98 @@ function matchesAccept(contentType, accept) {
   })
 }
 
+/* reduz fotos grandes (comuns em celular, 5-20MB) antes de enviar, pra nao travar em conexao movel.
+   se algo falhar (HEIC nao suportado pelo navegador, etc) devolve o arquivo original sem quebrar o fluxo */
+function compressImageIfNeeded(file) {
+  return new Promise(function(resolve) {
+    if (!file.type || !file.type.startsWith('image/') || file.type === 'image/gif') {
+      resolve(file)
+      return
+    }
+    var img = new Image()
+    var url = URL.createObjectURL(file)
+    var done = function(result) { URL.revokeObjectURL(url); resolve(result) }
+
+    img.onload = function() {
+      var scale = Math.min(1, MAX_DIMENSION / Math.max(img.width, img.height))
+      if (scale >= 1) { done(file); return }
+      try {
+        var canvas = document.createElement('canvas')
+        canvas.width = Math.round(img.width * scale)
+        canvas.height = Math.round(img.height * scale)
+        var ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        canvas.toBlob(function(blob) {
+          if (!blob) { done(file); return }
+          done(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }))
+        }, 'image/jpeg', JPEG_QUALITY)
+      } catch (e) {
+        done(file)
+      }
+    }
+    img.onerror = function() { done(file) }
+    img.src = url
+  })
+}
+
 export default function ImageUpload({ value, onChange, path, accept = 'image/*,video/*' }) {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
   const fileRef = useRef()
+  const taskRef = useRef(null)
+  const stallTimerRef = useRef(null)
 
-  const handleFile = (file) => {
-    if (!file) return
+  const clearStallTimer = () => {
+    if (stallTimerRef.current) clearTimeout(stallTimerRef.current)
+  }
+
+  const armStallTimer = () => {
+    clearStallTimer()
+    stallTimerRef.current = setTimeout(() => {
+      if (taskRef.current) taskRef.current.cancel()
+    }, STALL_TIMEOUT_MS)
+  }
+
+  const handleFile = async (fileInput) => {
+    if (!fileInput) return
     setError('')
+    setUploading(true)
+    setProgress(0)
+
+    const file = await compressImageIfNeeded(fileInput)
     const contentType = resolveContentType(file)
     if (!matchesAccept(contentType, accept)) {
+      setUploading(false)
       setError('Arquivo inválido. Envie uma foto ou um vídeo.')
       return
     }
-    setUploading(true)
-    const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
+
+    const ext = contentType === 'image/jpeg' ? 'jpg' : (file.name.split('.').pop() || 'bin').toLowerCase()
     const storageRef = ref(storage, `${path}/${Date.now()}.${ext}`)
     const task = uploadBytesResumable(storageRef, file, contentType ? { contentType } : undefined)
+    taskRef.current = task
+    armStallTimer()
 
     task.on('state_changed',
-      (snap) => setProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+      (snap) => {
+        armStallTimer()
+        setProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100))
+      },
       (err) => {
+        clearStallTimer()
+        taskRef.current = null
         console.error(err)
         setUploading(false)
-        setError('Não foi possível enviar o arquivo. Tente novamente.')
+        setError(
+          err && err.code === 'storage/canceled'
+            ? 'A conexão está muito lenta para enviar agora. Tente com wi-fi ou uma foto menor.'
+            : 'Não foi possível enviar o arquivo. Tente novamente.'
+        )
       },
       async () => {
+        clearStallTimer()
+        taskRef.current = null
         const url = await getDownloadURL(task.snapshot.ref)
         onChange(url)
         setUploading(false)
@@ -86,7 +155,7 @@ export default function ImageUpload({ value, onChange, path, accept = 'image/*,v
             <div style={{ width: '100%', height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden', marginBottom: 8 }}>
               <div style={{ width: `${progress}%`, height: '100%', background: '#4971B1', borderRadius: 3, transition: 'width .3s' }} />
             </div>
-            <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>Enviando... {progress}%</span>
+            <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>{progress > 0 ? `Enviando... ${progress}%` : 'Preparando arquivo...'}</span>
           </div>
         ) : value ? (
           <div>

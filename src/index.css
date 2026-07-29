@@ -27,6 +27,22 @@ button { font-family: inherit; cursor: pointer; }
 
 .atv-animate { animation: atv-fade-in .35s ease both; }
 
+/* VLibras: forca o botao pro canto inferior direito com z-index bem alto, pra nunca
+   ficar escondido atras do cabecalho fixo. O proprio widget calcula um "top" errado
+   em paginas longas (usa a altura do documento em vez da viewport) -- por isso
+   "bottom" precisa ficar explicito aqui, senao "top:auto" sem "bottom" cai na
+   posicao de fluxo normal (fim da pagina) em vez de ficar fixo na tela. */
+div[vw] {
+  position: fixed !important; z-index: 999999 !important;
+  top: auto !important; left: auto !important; bottom: 20px !important; right: 20px !important;
+  transform: none !important; margin: 0 !important;
+}
+div[vw-access-button] {
+  position: static !important; z-index: 999999 !important;
+  top: auto !important; left: auto !important; bottom: auto !important; right: auto !important;
+}
+div[vw-plugin-wrapper] { z-index: 999999 !important; }
+
 /* Acessibilidade: escala de fonte (a maior parte do site usa rem, entao isso escala o texto todo) */
 html.atv-fontsize-grande { font-size: 115%; }
 html.atv-fontsize-maior { font-size: 130%; }
