@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase'
-import DashFormField, { inputStyle } from '../../components/dashboard/DashFormField'
+import DashFormField, { inputStyle, selectStyle } from '../../components/dashboard/DashFormField'
 import ImageUpload from '../../components/dashboard/ImageUpload'
 
 export default function VideoForm() {
@@ -10,14 +10,14 @@ export default function VideoForm() {
   const navigate = useNavigate()
   const isEdit = Boolean(id)
 
-  const [form, setForm] = useState({ title: '', duration: '', youtubeUrl: '', thumbnailUrl: '' })
+  const [form, setForm] = useState({ title: '', duration: '', youtubeUrl: '', thumbnailUrl: '', format: 'video' })
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(isEdit)
 
   useEffect(() => {
     if (!isEdit) return
     getDoc(doc(db, 'videos', id)).then(snap => {
-      if (snap.exists()) setForm(snap.data())
+      if (snap.exists()) setForm(f => ({ ...f, ...snap.data() }))
       setLoading(false)
     })
   }, [id, isEdit])
@@ -60,6 +60,12 @@ export default function VideoForm() {
             <input value={form.youtubeUrl} onChange={e => set('youtubeUrl', e.target.value)} style={inputStyle} placeholder="https://youtube.com/watch?v=..." />
           </DashFormField>
         </div>
+        <DashFormField label="Formato" hint="Videos curtos aparecem no carrossel vertical da home">
+          <select value={form.format || 'video'} onChange={e => set('format', e.target.value)} style={selectStyle}>
+            <option value="video">Video (16:9)</option>
+            <option value="short">Video curto (vertical)</option>
+          </select>
+        </DashFormField>
         <DashFormField label="Thumbnail">
           <ImageUpload value={form.thumbnailUrl} onChange={url => set('thumbnailUrl', url)} path="videos" accept="image/*" />
         </DashFormField>

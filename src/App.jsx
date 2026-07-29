@@ -6,6 +6,8 @@ import Footer    from './components/Footer'
 import Home         from './pages/Home'
 import CategoryPage from './pages/CategoryPage'
 import ArticlePage  from './pages/ArticlePage'
+import Denuncia     from './pages/Denuncia'
+import Ranking      from './pages/Ranking'
 import { SobrePage, AnunciePage, ContatoPage } from './pages/StaticPages'
 
 import ProtectedRoute    from './components/dashboard/ProtectedRoute'
@@ -19,6 +21,7 @@ import VideoForm         from './pages/dashboard/VideoForm'
 import TickerManager     from './pages/dashboard/TickerManager'
 import BannersList       from './pages/dashboard/BannersList'
 import BannerForm        from './pages/dashboard/BannerForm'
+import DenunciasList     from './pages/dashboard/DenunciasList'
 
 function PublicLayout() {
   return (
@@ -56,6 +59,10 @@ export default function App() {
         <Route path="/cidade"    element={<CategoryPage />} />
         <Route path="/zeladoria" element={<CategoryPage />} />
         <Route path="/alimentacao" element={<CategoryPage />} />
+        <Route path="/regiao"    element={<CategoryPage />} />
+        <Route path="/horoscopo" element={<CategoryPage />} />
+        <Route path="/participe" element={<Denuncia />} />
+        <Route path="/ranking"   element={<Ranking />} />
         <Route path="/artigo/:id" element={<ArticlePage />} />
         <Route path="/sobre"      element={<SobrePage />} />
         <Route path="/anuncie"    element={<AnunciePage />} />
@@ -77,6 +84,7 @@ export default function App() {
           <Route path="/dashboard/banners"      element={<BannersList />} />
           <Route path="/dashboard/banners/new"  element={<BannerForm />} />
           <Route path="/dashboard/banners/:id"  element={<BannerForm />} />
+          <Route path="/dashboard/denuncias"    element={<DenunciasList />} />
         </Route>
       </Route>
     </Routes>

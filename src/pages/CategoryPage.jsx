@@ -26,6 +26,8 @@ const CATEGORY_MAP = {
   '/cidade':    'Cidade',
   '/zeladoria': 'Zeladoria',
   '/alimentacao': 'Alimentação',
+  '/regiao': 'Região',
+  '/horoscopo': 'Horóscopo',
 }
 
 export default function CategoryPage() {
@@ -40,7 +42,6 @@ export default function CategoryPage() {
   const featured = news[0]
   const rest = news.slice(1)
   const billboard = getBanner('billboard')
-  const leaderboard = getBanner('leaderboard')
   const square = getBanner('square')
 
   useEffect(() => { trackPageView('category-' + slug) }, [slug])
@@ -48,7 +49,7 @@ export default function CategoryPage() {
   return (
     <>
       <div className="atv-banner-wrap" style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderBottom: '1px solid #e5e7eb' }}>
-        {billboard && <AdBanner type="billboard" src={billboard.mediaUrl} href={billboard.linkUrl || '#'} />}
+        <AdBanner type="billboard" src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'} />
       </div>
 
       <div style={{ background: editoria?.bg || 'var(--blue-light)', borderBottom: '1px solid var(--border)', padding: '1.5rem 1rem' }}>
@@ -82,19 +83,15 @@ export default function CategoryPage() {
                 </div>
               )}
               {rest.length > 0 && (
-                <div className="atv-grid-related" style={{ background: 'var(--border)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-                  {rest.map(n => <NewsCard key={n.id} news={n} />)}
+                <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+                  {rest.map((n, i) => <NewsCard key={n.id} news={n} highlight={i > 0 && i % 4 === 0} />)}
                 </div>
               )}
             </>
           )}
-          {leaderboard && (
-            <div style={{ marginTop: '1.5rem' }}>
-              {leaderboard.mediaType === 'video'
-                ? <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
-                : <AdBanner type="leaderboard" src={leaderboard.mediaUrl} href={leaderboard.linkUrl || '#'} />}
-            </div>
-          )}
+          <div style={{ marginTop: '1.5rem' }}>
+            <AdBanner type="leaderboard" video="/banners/prefeitura-abril26/banco-leite.mp4" />
+          </div>
         </div>
 
         <aside style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

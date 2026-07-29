@@ -1,27 +1,72 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { EDITORIAS } from '../data'
+import useActiveCategories from '../hooks/useActiveCategories'
 
 const EDITORIAS_NAV = [
-  { to: '/alimentacao', label: 'Alimentacao' },
-  { to: '/brasil',      label: 'Brasil'      },
   { to: '/cidade',      label: 'Cidade'      },
   { to: '/cultura',     label: 'Cultura'     },
   { to: '/economia',    label: 'Economia'    },
   { to: '/educacao',    label: 'Educacao'    },
   { to: '/esportes',    label: 'Esportes'    },
   { to: '/eventos',     label: 'Eventos'     },
+  { to: '/horoscopo',   label: 'Horoscopo'   },
   { to: '/mobilidade',  label: 'Mobilidade'  },
   { to: '/mundo',       label: 'Mundo'       },
   { to: '/noticias',    label: 'Noticias'    },
+  { to: '/participe',   label: 'Participe',  cta: true },
   { to: '/politica',    label: 'Politica'    },
+  { to: '/ranking',     label: 'Ranking'     },
+  { to: '/regiao',      label: 'Regiao'      },
   { to: '/saude',       label: 'Saude'       },
   { to: '/seguranca',   label: 'Seguranca'   },
   { to: '/turismo',     label: 'Turismo'     },
+  { to: 'https://www.vagaon.com.br/', label: 'Vagas de Emprego', external: true },
   { to: '/zeladoria',   label: 'Zeladoria'   },
 ]
 
-const ROW1 = EDITORIAS_NAV.slice(0, 8)
-const ROW2 = EDITORIAS_NAV.slice(8)
+/* categoria (label usado no Firestore) correspondente a cada rota de editoria */
+function categoryLabelFor(item) {
+  var slug = item.to.slice(1)
+  var editoria = EDITORIAS.find(function(e) { return e.slug === slug })
+  return editoria ? editoria.label : null
+}
+
+/* esconde botoes de editoria sem materia recente; links externos e ainda-carregando (null) sempre aparecem */
+function isNavItemVisible(item, activeCategories) {
+  if (item.external) return true
+  if (activeCategories === null) return true
+  var label = categoryLabelFor(item)
+  return label ? activeCategories.has(label) : true
+}
+
+function renderNavLink(item, pathname) {
+  if (item.external) {
+    return (
+      <a
+        key={item.to}
+        href={item.to}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="atv-nav-link"
+      >{item.label}</a>
+    )
+  }
+  if (item.cta) {
+    return (
+      <Link key={item.to} to={item.to} className="atv-nav-cta">
+        {item.label}
+      </Link>
+    )
+  }
+  return (
+    <Link
+      key={item.to}
+      to={item.to}
+      className={'atv-nav-link' + (pathname === item.to ? ' active' : '')}
+    >{item.label}</Link>
+  )
+}
 
 /* altura de cada linha de nav — usada tanto no CSS quanto no logo */
 var NAV_ROW_H = 36
@@ -47,6 +92,10 @@ var css = [
   '.atv-nav-link { padding:0 11px; height:' + NAV_ROW_H + 'px; line-height:' + NAV_ROW_H + 'px; color:#374151; font-size:.79rem; font-weight:500; border-bottom:2px solid transparent; transition:color .15s,border-color .15s; white-space:nowrap; text-decoration:none; display:block; }',
   '.atv-nav-link:hover { color:#cc0000; }',
   '.atv-nav-link.active { color:#cc0000; border-bottom-color:#cc0000; font-weight:700; }',
+
+  /* botao de destaque (participe) */
+  '.atv-nav-cta { margin:0 4px; padding:5px 14px; background:#Cd0000; color:#fff !important; font-size:.76rem; font-weight:700; border-radius:20px; text-decoration:none; white-space:nowrap; transition:background .15s; }',
+  '.atv-nav-cta:hover { background:#a30000; }',
 
   /* hamburger — escondido no desktop */
   '.atv-hamburger { display:none; background:none; border:none; padding:8px; cursor:pointer; margin-left:auto; }',
@@ -76,6 +125,11 @@ export default function Header() {
   var menuState = useState(false)
   var menuOpen = menuState[0]
   var setMenuOpen = menuState[1]
+  var activeCategories = useActiveCategories()
+
+  var visibleNav = EDITORIAS_NAV.filter(function(item) { return isNavItemVisible(item, activeCategories) })
+  var row1 = visibleNav.slice(0, 8)
+  var row2 = visibleNav.slice(8)
 
   return (
     <>
@@ -95,26 +149,10 @@ export default function Header() {
           {/* 2 linhas de editorias */}
           <nav className="atv-nav-col">
             <div className="atv-nav-row">
-              {ROW1.map(function(item) {
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className={'atv-nav-link' + (pathname === item.to ? ' active' : '')}
-                  >{item.label}</Link>
-                )
-              })}
+              {row1.map(function(item) { return renderNavLink(item, pathname) })}
             </div>
             <div className="atv-nav-row">
-              {ROW2.map(function(item) {
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className={'atv-nav-link' + (pathname === item.to ? ' active' : '')}
-                  >{item.label}</Link>
-                )
-              })}
+              {row2.map(function(item) { return renderNavLink(item, pathname) })}
             </div>
           </nav>
 
@@ -132,14 +170,27 @@ export default function Header() {
 
       {/* Drawer mobile */}
       <div className={'atv-mobile-menu' + (menuOpen ? ' open' : '')}>
-        {EDITORIAS_NAV.map(function(item) {
+        {visibleNav.map(function(item) {
+          if (item.external) {
+            return (
+              <a
+                key={item.to}
+                href={item.to}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={function() { setMenuOpen(false) }}
+              >{item.label}</a>
+            )
+          }
           return (
             <Link
               key={item.to}
               to={item.to}
               onClick={function() { setMenuOpen(false) }}
-              style={{ fontWeight: pathname === item.to ? 700 : 500, color: pathname === item.to ? '#cc0000' : undefined }}
-            >{item.label}</Link>
+              style={item.cta
+                ? { color: '#Cd0000', fontWeight: 700 }
+                : { fontWeight: pathname === item.to ? 700 : 500, color: pathname === item.to ? '#cc0000' : undefined }}
+            >{item.cta ? '📮 ' + item.label : item.label}</Link>
           )
         })}
       </div>

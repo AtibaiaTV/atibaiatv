@@ -8,6 +8,12 @@ const COLUMNS = [
   { key: 'title', label: 'Titulo', render: (row) => <span style={{ fontWeight: 600 }}>{row.title}</span> },
   { key: 'duration', label: 'Duracao' },
   {
+    key: 'format', label: 'Formato',
+    render: (row) => row.format === 'short'
+      ? <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#7c3aed', background: '#f5f3ff', padding: '3px 9px', borderRadius: 12 }}>Curto</span>
+      : <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#4971B1', background: '#eef3fa', padding: '3px 9px', borderRadius: 12 }}>Video</span>,
+  },
+  {
     key: 'youtubeUrl', label: 'YouTube',
     render: (row) => row.youtubeUrl ? <a href={row.youtubeUrl} target="_blank" rel="noreferrer" style={{ color: '#4971B1', fontSize: '0.78rem' }}>Abrir</a> : '—',
   },

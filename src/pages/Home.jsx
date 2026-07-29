@@ -1,12 +1,16 @@
 import { useEffect } from 'react'
 import NewsCard from '../components/NewsCard'
 import VideoCard from '../components/VideoCard'
+import ShortVideos from '../components/ShortVideos'
+import EditoriaCard from '../components/EditoriaCard'
+import TrendingList from '../components/TrendingList'
 import AdBanner from '../components/AdBanner'
 import BannerCarousel from '../components/BannerCarousel'
 import useArticles from '../hooks/useArticles'
 import useVideos from '../hooks/useVideos'
 import useBanners from '../hooks/useBanners'
 import { trackPageView } from '../hooks/usePageViews'
+import { EDITORIAS } from '../data'
 
 var bannerWrap = {
   background: '#f4f5f7',
@@ -14,6 +18,8 @@ var bannerWrap = {
   borderBottom: '1px solid #e5e7eb',
   padding: '10px 0',
 }
+
+var DESTAQUES_SLUGS = ['noticias', 'cidade', 'seguranca', 'economia', 'esportes', 'cultura', 'eventos', 'zeladoria']
 
 export default function Home() {
   var articlesData = useArticles()
@@ -35,26 +41,35 @@ export default function Home() {
   /* todos os squares para o carrossel */
   var squareBanners = banners.filter(function(b) { return b.type === 'square' })
 
-  var featured    = articles[0]
-  var sideNews    = articles.slice(1, 4)
-  var restNews    = articles.slice(4)
-  var latestVideo = videos[0] || null
+  var featured     = articles[0]
+  var sideNews     = articles.slice(1, 4)
+  var restNews     = articles.slice(4)
+  var latestVideo  = videos[0] || null
+  var shortVideos  = videos.filter(function(v) { return v.format === 'short' })
+  var maisLidas    = articles.slice(0, 6)
+  var destaques    = DESTAQUES_SLUGS.map(function(slug) { return EDITORIAS.find(function(e) { return e.slug === slug }) }).filter(Boolean)
 
-  var leaderEl = !leaderboard ? null
-    : leaderboard.mediaType === 'video'
-      ? <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
-      : <AdBanner type="leaderboard" src={leaderboard.mediaUrl} href={leaderboard.linkUrl || '#'} />
+  /* usa leaderboard dedicado; se não houver, usa o primeiro billboard de vídeo */
+  var leaderVideoSrc = (leaderboard && leaderboard.mediaType === 'video')
+    ? leaderboard.mediaUrl
+    : (banners.find(function(b) { return b.type === 'billboard' && b.mediaType === 'video' }) || {}).mediaUrl || null
+
+  var leaderEl = leaderVideoSrc
+    ? <AdBanner type="leaderboard" video={leaderVideoSrc} />
+    : null
 
   return (
     <>
       {/* BANNER TOPO — billboard, mesma largura do conteudo */}
-      {billboard && (
-        <div style={bannerWrap}>
-          <div className="atv-container">
-            <AdBanner type="billboard" src={billboard.mediaUrl} href={billboard.linkUrl || '#'} />
-          </div>
+      <div style={bannerWrap}>
+        <div className="atv-container">
+          <AdBanner
+            type="billboard"
+            src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'}
+            href={billboard ? billboard.linkUrl : '#'}
+          />
         </div>
-      )}
+      </div>
 
       {/* HERO */}
       <div className="atv-container" style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
@@ -76,14 +91,29 @@ export default function Home() {
         )}
       </div>
 
-      {/* BANNER MEIO — leaderboard */}
-      {leaderEl && (
-        <div style={bannerWrap}>
-          <div className="atv-container">
-            {leaderEl}
-          </div>
+      {/* EDITORIAS — grade colorida de atalhos, usa a largura toda */}
+      <div className="atv-container" style={{ paddingBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1rem' }}>
+          <h2 style={{
+            fontSize: '0.85rem', fontWeight: 700, color: '#1a1a2e',
+            textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0,
+          }}>Explore por editoria</h2>
+          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
         </div>
-      )}
+        <div className="atv-grid-editorias">
+          {destaques.map(function(ed) { return <EditoriaCard key={ed.slug} editoria={ed} /> })}
+        </div>
+      </div>
+
+      {/* VIDEOS CURTOS — carrossel vertical */}
+      <ShortVideos videos={shortVideos} />
+
+      {/* BANNER MEIO — leaderboard */}
+      <div style={bannerWrap}>
+        <div className="atv-container">
+          {leaderEl}
+        </div>
+      </div>
 
       {/* CONTEUDO + SIDEBAR */}
       <div className="atv-container atv-grid-main" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
@@ -98,7 +128,11 @@ export default function Home() {
             <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
           </div>
           <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-            {restNews.map(function(n) { return <NewsCard key={n.id} news={n} /> })}
+            {restNews.map(function(n, i) {
+              /* a cada 4 materias, uma carta "destaque" maior quebra a monotonia da lista */
+              var isHighlight = i > 0 && i % 4 === 0
+              return <NewsCard key={n.id} news={n} highlight={isHighlight} />
+            })}
             {restNews.length === 0 && !loading && (
               <div style={{ padding: '2rem', textAlign: 'center', color: '#9ca3af', fontSize: '0.85rem' }}>
                 Nenhuma noticia adicional.
@@ -108,12 +142,15 @@ export default function Home() {
         </div>
 
         {/* Sidebar */}
-        <aside>
+        <aside style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
           {/* 1 square 300x300 rotativo */}
-          <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
             <BannerCarousel banners={squareBanners} width={300} height={300} />
           </div>
+
+          {/* Mais lidas — ranking numerado */}
+          <TrendingList items={maisLidas} />
 
           {/* 1 video mais recente */}
           {latestVideo && (
@@ -133,13 +170,11 @@ export default function Home() {
       </div>
 
       {/* BANNER RODAPE — leaderboard */}
-      {leaderEl && (
-        <div style={bannerWrap}>
-          <div className="atv-container">
-            {leaderEl}
-          </div>
+      <div style={bannerWrap}>
+        <div className="atv-container">
+          {leaderEl}
         </div>
-      )}
+      </div>
     </>
   )
 }

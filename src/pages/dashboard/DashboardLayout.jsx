@@ -5,6 +5,7 @@ const NAV = [
   { to: '/dashboard', label: 'Visao Geral', icon: '📊', end: true },
   { to: '/dashboard/articles', label: 'Materias', icon: '📰' },
   { to: '/dashboard/videos', label: 'Videos', icon: '🎬' },
+  { to: '/dashboard/denuncias', label: 'Denuncias', icon: '📮' },
   { to: '/dashboard/ticker', label: 'Ticker', icon: '📢' },
   { to: '/dashboard/banners', label: 'Banners', icon: '🖼️' },
 ]

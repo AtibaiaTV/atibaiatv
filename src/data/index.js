@@ -38,6 +38,8 @@ export const EDITORIAS = [
   { slug: 'cidade',     label: 'Cidade',             icon: '🏙️', color: '#b45309', bg: '#fffbeb', description: 'Infraestrutura, obras e bairros de Atibaia' },
   { slug: 'zeladoria',  label: 'Zeladoria',          icon: '🧹', color: '#0f766e', bg: '#f0fdfa', description: 'Conservação, limpeza e manutenção urbana' },
   { slug: 'alimentacao',label: 'Alimentação',         icon: '🍽️', color: '#dc2626', bg: '#fff1f2', description: 'Gastronomia, feiras e segurança alimentar' },
+  { slug: 'regiao',     label: 'Região',              icon: '🗺️', color: '#0e7490', bg: '#ecfeff', description: 'Municípios vizinhos e a região de Atibaia' },
+  { slug: 'horoscopo',  label: 'Horóscopo',           icon: '🔮', color: '#7e22ce', bg: '#f5eeff', description: 'Horóscopo mensal para todos os signos' },
   { slug: 'economia',   label: 'Economia',           icon: '💼', color: '#Cd0000', bg: '#faeaea', description: 'Negócios, empregos e desenvolvimento local' },
   { slug: 'seguranca',  label: 'Segurança Pública',  icon: '🛡️', color: '#1a6fa8', bg: '#e8f4fd', description: 'Segurança e ordem pública em Atibaia' },
   { slug: 'mobilidade', label: 'Mobilidade',         icon: '🚌', color: '#7a5c00', bg: '#fff7e0', description: 'Trânsito, transporte e mobilidade urbana' },
@@ -56,7 +58,7 @@ export const SCHEDULE = [
 ]
 
 // ─── CATEGORIAS ──────────────────────────────────────────────────────────────
-export const CATEGORIES = ['Todos', 'Notícias', 'Segurança Pública', 'Mobilidade', 'Economia', 'Cultura', 'Eventos', 'Esportes', 'Turismo', 'Educação', 'Saúde', 'Política', 'Brasil', 'Mundo', 'Cidade', 'Zeladoria', 'Alimentação']
+export const CATEGORIES = ['Todos', 'Notícias', 'Segurança Pública', 'Mobilidade', 'Economia', 'Cultura', 'Eventos', 'Esportes', 'Turismo', 'Educação', 'Saúde', 'Política', 'Brasil', 'Mundo', 'Cidade', 'Zeladoria', 'Alimentação', 'Região', 'Horóscopo']
 
 // ─── TAG STYLES ──────────────────────────────────────────────────────────────
 export const TAG_STYLES = {
@@ -78,6 +80,8 @@ export const TAG_STYLES = {
   'Cidade':           { bg: '#fffbeb', color: '#b45309' },
   'Zeladoria':        { bg: '#f0fdfa', color: '#0f766e' },
   'Alimentação':      { bg: '#fff1f2', color: '#dc2626' },
+  'Região':           { bg: '#ecfeff', color: '#0e7490' },
+  'Horóscopo':        { bg: '#f5eeff', color: '#7e22ce' },
 }
 
 // ─── NOTÍCIAS ────────────────────────────────────────────────────────────────
@@ -142,13 +146,52 @@ export const RECENT_VIDEOS = [
   { id: 'v4', title: 'Atibaia: cidade mais segura de SP', duration: '12:30', views: '2.1k', thumb: 'green' },
 ]
 
+// ─── DENUNCIAS DA CIDADE ───────────────────────────────────────────────────────
+export const DENUNCIA_CATEGORIAS = [
+  { value: 'buraco',     label: 'Buraco na via',              icon: '🕳️', color: '#b45309' },
+  { value: 'agua',       label: 'Falta de água',               icon: '💧', color: '#0891b2' },
+  { value: 'iluminacao', label: 'Iluminação pública apagada',  icon: '💡', color: '#7c3aed' },
+  { value: 'energia',    label: 'Falta de energia',            icon: '⚡', color: '#c47a00' },
+  { value: 'animais',    label: 'Maus-tratos a animais',       icon: '🐾', color: '#dc2626' },
+  { value: 'incendio',   label: 'Incêndio',                    icon: '🔥', color: '#Cd0000' },
+  { value: 'barulho',    label: 'Barulho / perturbação do sossego', icon: '🔊', color: '#4971B1' },
+  { value: 'outro',      label: 'Outro',                       icon: '📌', color: '#6b7280' },
+]
+
+export const DENUNCIA_STATUS = [
+  { value: 'novo',      label: 'Novo',         color: '#dc2626', bg: '#fef2f2' },
+  { value: 'analise',   label: 'Em análise',   color: '#c47a00', bg: '#fff7e0' },
+  { value: 'resolvido', label: 'Resolvido',    color: '#059669', bg: '#ecfdf5' },
+]
+
+// ─── GAMIFICACAO / PARTICIPACAO ────────────────────────────────────────────────
+export const PONTOS_ENVIO_COM_MIDIA = 15
+export const PONTOS_ENVIO_SEM_MIDIA = 5
+
+/* niveis por pontuacao acumulada, do mais baixo ao mais alto */
+export const NIVEIS_PARTICIPACAO = [
+  { min: 0,   label: 'Colaborador',        icon: '🌱', color: '#6b7280' },
+  { min: 50,  label: 'Vigilante da Cidade', icon: '👀', color: '#4971B1' },
+  { min: 150, label: 'Guardião de Atibaia', icon: '🛡️', color: '#7c3aed' },
+  { min: 350, label: 'Lenda Local',         icon: '🏆', color: '#c47a00' },
+]
+
+export function getNivelParticipacao(pontos) {
+  var atual = NIVEIS_PARTICIPACAO[0]
+  for (var i = 0; i < NIVEIS_PARTICIPACAO.length; i++) {
+    if (pontos >= NIVEIS_PARTICIPACAO[i].min) atual = NIVEIS_PARTICIPACAO[i]
+  }
+  return atual
+}
+
 // ─── CONTATO ─────────────────────────────────────────────────────────────────
 export const CONTATO = {
   endereco: 'Rua Padre Ernesto da Cunha Veloso, 151 - Atibaia Jardim, Atibaia/SP - CEP 12.942-240',
   telefone: '(11) 97497-6540',
   emailRedacao: 'atibaiatv2013@gmail.com',
   emailComercial: 'atibaiatv2013@gmail.com',
-  instagram: 'https://www.instagram.com/atibaia_tv/',
+  instagram: 'https://www.instagram.com/atibaiatv_/',
   facebook: 'https://www.facebook.com/AtibaiaTv/',
-  youtube: 'https://www.youtube.com/@REDESA_tv',
+  youtube: 'https://www.youtube.com/@Atibaia_tv',
+  whatsapp: 'https://wa.me/5511999785370',
 }
