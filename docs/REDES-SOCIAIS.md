@@ -29,11 +29,21 @@ variables** (marque como *Secret* as duas primeiras), no ambiente **Production**
 
 | Variável | Para que serve |
 |---|---|
-| `META_ACCESS_TOKEN` | Token de página de longa duração |
-| `META_PAGE_ID` | ID da página do Facebook (/AtibaiaTv) |
-| `META_IG_USER_ID` | ID da conta profissional do Instagram (@atibaiatv_) |
-| `FIREBASE_API_KEY` | Chave web do Firebase — valida o login de quem clicou em publicar |
-| `SOCIAL_ALLOWED_EMAILS` | E-mails autorizados a publicar, separados por vírgula |
+| `META_ACCESS_TOKEN` | Token **de página** de longa duração (marque como **Secret**) |
+| `META_PAGE_ID` | `566044903408400` — página Atibaia TV |
+| `META_IG_USER_ID` | `17841400603446887` — conta **@atibaia_tv** |
+| `SOCIAL_ALLOWED_EMAILS` | E-mails do **painel** autorizados a publicar, separados por vírgula |
+
+Sem o `META_IG_USER_ID` a ferramenta publica só no Facebook e avisa na tela que o
+Instagram não está configurado. Nada quebra.
+
+> **Cuidado com o Instagram parecido.** Existem duas contas: a oficial **@atibaia_tv**
+> (~5.500 seguidores) e a secundária **@atibaiatv_** (~19 seguidores). Confira sempre
+> pelo ID `17841400603446887`, não pelo nome.
+
+A chave do Firebase que valida o login não precisa ser cadastrada: a função
+reaproveita a `VITE_FIREBASE_API_KEY` que o projeto já define. Se um dia quiser
+usar outra, basta criar `FIREBASE_API_KEY`, que tem prioridade.
 
 Depois de salvar as variáveis é preciso **refazer o deploy** para elas valerem.
 
@@ -57,8 +67,34 @@ npx wrangler pages dev dist
 5. `META_PAGE_ID`: em `/me/accounts` aparece o `id` da página.
 6. `META_IG_USER_ID`: em `/<PAGE_ID>?fields=instagram_business_account`.
 
-O Instagram precisa ser **conta profissional** (Comercial ou Criador) e estar
-**vinculado à página do Facebook** — sem isso a API não publica. Não é necessário
+### O token que não expira
+
+Não use o token de usuário direto. A sequência certa é:
+
+1. Gere o token de **usuário** no Graph API Explorer.
+2. Leve-o ao **Access Token Debugger** e clique em **Extend Access Token** — vira um
+   token de usuário de longa duração (60 dias).
+3. Cole esse token estendido no Explorer e rode `me/accounts` de novo.
+4. O `access_token` que vier junto da página agora é um **token de página de longa
+   duração**, que na prática não expira (só cai se você trocar a senha do Facebook,
+   remover o app ou perder a administração da página).
+
+É esse último que vai no `META_ACCESS_TOKEN`. Pulando o passo 2, o token da página
+herda a validade curta e para de funcionar em poucas horas.
+
+## Por que `instagram_business_account` volta vazio (e por que tudo bem)
+
+A consulta `566044903408400?fields=instagram_business_account` não devolve nada, porque
+a conta vinculada à página Atibaia TV é a **@redesa_tv**, da rede parceira — e uma
+página comporta apenas uma conta do Instagram vinculada.
+
+Isso **não impede** a publicação. O acesso à @atibaia_tv chega pelo **portfólio
+empresarial** (Carlos Henrique Pompeu, `1622203431210650`) e aparece nos "escopos
+granulares" do token: `instagram_content_publish → 17841400603446887`. Verificado em
+30/07/2026 criando contêiner de mídia com token de usuário e com token de página —
+funcionou nos dois. Não é preciso desconectar a @redesa_tv.
+
+O Instagram precisa ser **conta profissional** (Comercial ou Criador). Não é necessário
 passar por revisão da Meta para postar em contas que você mesmo administra.
 
 ## Limites da plataforma (não são limitações da ferramenta)

@@ -12,7 +12,7 @@
      SOCIAL_ALLOWED_EMAILS  e-mails autorizados, separados por virgula
 */
 
-const GRAPH = 'https://graph.facebook.com/v19.0'
+const GRAPH = 'https://graph.facebook.com/v26.0'
 const FB_MIN_SCHEDULE_S = 10 * 60          // a Meta exige no minimo 10 minutos
 const FB_MAX_SCHEDULE_S = 75 * 24 * 3600   // e no maximo 75 dias
 
@@ -22,10 +22,13 @@ const json = (body, status = 200) =>
 /* confirma que quem chamou esta logado no painel; sem isso a URL da funcao
    viraria um jeito de qualquer pessoa postar nas contas oficiais */
 async function authorize(idToken, env) {
-  if (!env.FIREBASE_API_KEY) return { ok: false, msg: 'FIREBASE_API_KEY nao configurada no Cloudflare' }
+  /* o projeto ja define VITE_FIREBASE_API_KEY para o front; reaproveitamos ela
+     aqui para nao precisar cadastrar a mesma chave duas vezes */
+  const apiKey = env.FIREBASE_API_KEY || env.VITE_FIREBASE_API_KEY
+  if (!apiKey) return { ok: false, msg: 'FIREBASE_API_KEY nao configurada no Cloudflare' }
   if (!idToken) return { ok: false, msg: 'Sessao ausente. Entre no painel novamente.' }
 
-  const res = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + env.FIREBASE_API_KEY, {
+  const res = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + apiKey, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ idToken }),
@@ -88,10 +91,17 @@ export async function onRequestPost(context) {
   if (!imageUrl || !caption) return json({ error: 'imageUrl e caption sao obrigatorios' }, 400)
 
   const wantFacebook = !targets || targets.facebook !== false
-  const wantInstagram = (!targets || targets.instagram !== false) && Boolean(igUserId)
+  const pediuInstagram = !targets || targets.instagram !== false
+  const wantInstagram = pediuInstagram && Boolean(igUserId)
 
   const results = []
   const errors = []
+
+  /* sem o META_IG_USER_ID nao da para publicar no Instagram; avisa em vez de
+     ignorar em silencio, senao parece que o post saiu nas duas redes */
+  if (pediuInstagram && !igUserId) {
+    errors.push('Instagram: ainda não configurado (falta META_IG_USER_ID).')
+  }
 
   if (wantFacebook) {
     try {
