@@ -143,14 +143,17 @@ async function drawPost(canvas, article, enquadramento, ajuste = { dx: 0, dy: 0,
       const dw = img.width * escala
       const dh = img.height * escala
 
-      /* so deixa deslocar no eixo em que a foto sobra; assim o arraste nunca
-         abre uma falha entre a imagem e a borda da area */
-      const px = dw >= fw
-        ? Math.min(fx, Math.max(fx + fw - dw, fx + (fw - dw) / 2 + ajuste.dx))
-        : fx + (fw - dw) / 2
-      const py = dh >= fh
-        ? Math.min(fy, Math.max(fy + fh - dh, fy + (fh - dh) / 2 + ajuste.dy))
-        : fy + (fh - dh) / 2
+      /* limita o deslocamento conforme o eixo: quando a foto transborda, ela nao
+         pode revelar falha nas bordas; quando sobra espaco (caso do cartaz), ela
+         desliza livre mas sem sair da area */
+      const limitar = (inicio, tamanhoArea, tamanhoFoto, desloc) => {
+        const centro = inicio + (tamanhoArea - tamanhoFoto) / 2 + desloc
+        return tamanhoFoto >= tamanhoArea
+          ? Math.min(inicio, Math.max(inicio + tamanhoArea - tamanhoFoto, centro))
+          : Math.max(inicio, Math.min(inicio + tamanhoArea - tamanhoFoto, centro))
+      }
+      const px = limitar(fx, fw, dw, ajuste.dx)
+      const py = limitar(fy, fh, dh, ajuste.dy)
 
       // sobrando espaco, preenche com a propria foto desfocada em vez de tarja
       if (dw < fw || dh < fh) {
