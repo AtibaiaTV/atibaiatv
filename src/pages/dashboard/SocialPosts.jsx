@@ -17,8 +17,10 @@ const BARRA_PERFIS = '/logos/RS_Logos_hor.png'
 const MARGEM = 36
 const CAB_ALTURA = 150
 const BARRA_ALTURA = 14
-const FOTO_TOPO = CAB_ALTURA + BARRA_ALTURA + 28
-const RODAPE_ALTURA = 142
+const RESPIRO = 28
+const FOTO_TOPO = CAB_ALTURA + BARRA_ALTURA + RESPIRO
+const RODAPE_ALTURA = 118                                    // faixa dos perfis
+const BARRA_BAIXO_Y = H - RODAPE_ALTURA - BARRA_ALTURA       // 2a faixa, como no modelo
 const MAX_CAPTION = 2200 // limite do Instagram
 
 /* quanto de legenda cada rede mostra antes do "ver mais" */
@@ -115,7 +117,7 @@ async function drawPost(canvas, article) {
   const fx = MARGEM
   const fy = FOTO_TOPO
   const fw = W - MARGEM * 2
-  const fh = H - RODAPE_ALTURA - FOTO_TOPO
+  const fh = BARRA_BAIXO_Y - RESPIRO - FOTO_TOPO
 
   ctx.save()
   ctx.beginPath()
@@ -161,12 +163,10 @@ async function drawPost(canvas, article) {
   }
   ctx.restore()
 
-  // contorno fino da foto, na cor da editoria
-  ctx.strokeStyle = ed.color
-  ctx.lineWidth = 3
-  ctx.strokeRect(fx + 1.5, fy + 1.5, fw - 3, fh - 3)
+  // ── rodape: faixa da editoria + perfis ─────────────────────────────────────
+  ctx.fillStyle = ed.color
+  ctx.fillRect(MARGEM, BARRA_BAIXO_Y, W - MARGEM * 2, BARRA_ALTURA)
 
-  // ── rodape com os perfis ───────────────────────────────────────────────────
   try {
     const barra = await loadImage(BARRA_PERFIS)
     const bw = W - MARGEM * 2 - 60
