@@ -63,10 +63,12 @@ export function useVisitantes() {
 
   useEffect(() => {
     getDocs(collection(db, 'siteDaily')).then(snap => {
+      /* so aceita documentos com data no formato AAAA-MM-DD: registro malformado
+         nao entra na conta nem aparece como barra fantasma no grafico */
       const dias = []
       snap.forEach(d => {
         const v = d.data()
-        if (v.data) dias.push({ data: v.data, visitas: v.visitas || 0 })
+        if (v.data && /^\d{4}-\d{2}-\d{2}$/.test(v.data)) dias.push({ data: v.data, visitas: v.visitas || 0 })
       })
       dias.sort((a, b) => (a.data < b.data ? -1 : 1))
 
