@@ -64,11 +64,16 @@ function wrapText(ctx, text, maxWidth, maxLines) {
   return lines
 }
 
+/* guarda as imagens ja baixadas: o ajuste manual redesenha a arte a cada pixel
+   arrastado, e recarregar a foto a cada quadro deixaria o arraste travado */
+const cacheImagens = new Map()
+
 function loadImage(src, crossOrigin) {
+  if (cacheImagens.has(src)) return Promise.resolve(cacheImagens.get(src))
   return new Promise((resolve, reject) => {
     const img = new Image()
     if (crossOrigin) img.crossOrigin = 'anonymous'
-    img.onload = () => resolve(img)
+    img.onload = () => { cacheImagens.set(src, img); resolve(img) }
     img.onerror = () => reject(new Error('falha ao carregar ' + src))
     img.src = src
   })
@@ -87,7 +92,7 @@ function roundRect(ctx, x, y, w, h, r) {
 /* padrao visual da emissora: moldura branca, cabecalho com o logo redondo e o nome
    da editoria na cor dela, foto no miolo com o titulo sobre gradiente, e a barra
    de perfis no rodape */
-async function drawPost(canvas, article, enquadramento) {
+async function drawPost(canvas, article, enquadramento, ajuste = { dx: 0, dy: 0, zoom: 1 }) {
   const ed = editoriaInfo(article.category)
   const ctx = canvas.getContext('2d')
   canvas.width = W
@@ -131,10 +136,24 @@ async function drawPost(canvas, article, enquadramento) {
     try {
       const img = await loadImage(proxied(article.thumbnailUrl), true)
 
-      if (enquadramento === 'inteira') {
-        /* cartaz e flyer perdem sentido cortados: encaixa a imagem inteira e
-           preenche o resto com uma versao desfocada dela mesma, para nao sobrar
-           tarja chapada */
+      const base = enquadramento === 'inteira'
+        ? Math.min(fw / img.width, fh / img.height)
+        : Math.max(fw / img.width, fh / img.height)
+      const escala = base * (ajuste.zoom || 1)
+      const dw = img.width * escala
+      const dh = img.height * escala
+
+      /* so deixa deslocar no eixo em que a foto sobra; assim o arraste nunca
+         abre uma falha entre a imagem e a borda da area */
+      const px = dw >= fw
+        ? Math.min(fx, Math.max(fx + fw - dw, fx + (fw - dw) / 2 + ajuste.dx))
+        : fx + (fw - dw) / 2
+      const py = dh >= fh
+        ? Math.min(fy, Math.max(fy + fh - dh, fy + (fh - dh) / 2 + ajuste.dy))
+        : fy + (fh - dh) / 2
+
+      // sobrando espaco, preenche com a propria foto desfocada em vez de tarja
+      if (dw < fw || dh < fh) {
         const cobrir = Math.max(fw / img.width, fh / img.height)
         ctx.save()
         ctx.filter = 'blur(28px)'
@@ -142,17 +161,9 @@ async function drawPost(canvas, article, enquadramento) {
         ctx.restore()
         ctx.fillStyle = 'rgba(10,16,28,0.28)'
         ctx.fillRect(fx, fy, fw, fh)
-
-        const caber = Math.min(fw / img.width, fh / img.height)
-        const dw = img.width * caber
-        const dh = img.height * caber
-        ctx.drawImage(img, fx + (fw - dw) / 2, fy + (fh - dh) / 2, dw, dh)
-      } else {
-        const escala = Math.max(fw / img.width, fh / img.height)
-        const dw = img.width * escala
-        const dh = img.height * escala
-        ctx.drawImage(img, fx + (fw - dw) / 2, fy + (fh - dh) / 2, dw, dh)
       }
+
+      ctx.drawImage(img, px, py, dw, dh)
     } catch (e) {
       aviso.push('A foto da matéria não pôde ser carregada — a arte saiu com o fundo padrão.')
     }
@@ -225,7 +236,7 @@ function textoComTags(texto) {
 
 /* simula o card do feed para a pessoa ver onde a legenda corta e como a foto
    fica enquadrada, antes de publicar de verdade */
-function PostPreview({ rede, artUrl, caption, scheduleAt }) {
+function PostPreview({ rede, holderRef, caption, scheduleAt }) {
   const cfg = REDES[rede]
   const cortou = caption.length > cfg.corte
   const visivel = cortou ? caption.slice(0, cfg.corte).replace(/\s+\S*$/, '') : caption
@@ -242,9 +253,7 @@ function PostPreview({ rede, artUrl, caption, scheduleAt }) {
         </div>
       </div>
 
-      {artUrl
-        ? <img src={artUrl} alt="Prévia da arte" style={{ width: '100%', display: 'block' }} />
-        : <div style={{ width: '100%', aspectRatio: '4/5', background: '#f3f4f6' }} />}
+      <div ref={holderRef} style={{ width: '100%', aspectRatio: '4/5', background: '#f3f4f6' }} />
 
       <div style={{ padding: '10px 12px 14px' }}>
         <div style={{ fontSize: '1.05rem', letterSpacing: 6, color: '#262626', marginBottom: 8 }}>♡ ♬ ↗</div>
@@ -270,15 +279,30 @@ export default function SocialPosts() {
   const [targets, setTargets] = useState({ facebook: true, instagram: true })
   const [status, setStatus] = useState(null)
   const [warnings, setWarnings] = useState([])
-  const [artUrl, setArtUrl] = useState('')
   const [redePreview, setRedePreview] = useState('instagram')
   const [enquadramento, setEnquadramento] = useState('preencher')
+  const [ajuste, setAjuste] = useState({ dx: 0, dy: 0, zoom: 1 })
   const canvasRef = useRef(null)
+  const holderRef = useRef(null)
+  const arrasteRef = useRef(null)
 
-  /* libera o objectURL da arte anterior para não vazar memória ao trocar de matéria */
+  /* o canvas é criado uma vez em memória e depois encaixado na prévia; assim ele
+     nunca é nulo e o que aparece na tela é a arte real, não uma cópia */
   useEffect(() => {
-    return () => { if (artUrl) URL.revokeObjectURL(artUrl) }
-  }, [artUrl])
+    if (!canvasRef.current) canvasRef.current = document.createElement('canvas')
+    const canvas = canvasRef.current
+    canvas.style.width = '100%'
+    canvas.style.display = 'block'
+    canvas.style.cursor = 'grab'
+    canvas.style.touchAction = 'none'
+    if (holderRef.current && canvas.parentNode !== holderRef.current) {
+      holderRef.current.appendChild(canvas)
+    }
+    canvas.onpointerdown = aoPressionar
+    canvas.onpointermove = aoMover
+    canvas.onpointerup = aoSoltar
+    canvas.onpointercancel = aoSoltar
+  })
 
   useEffect(() => {
     const q = query(collection(db, 'articles'), orderBy('createdAt', 'desc'))
@@ -288,32 +312,62 @@ export default function SocialPosts() {
     })
   }, [])
 
-  const renderArt = async (a, modo) => {
-    setStatus(null)
-    setRendering(true)
+  const renderArt = async (a, modo, aj) => {
     try {
-      /* canvas em memoria: se dependesse do elemento no HTML, o primeiro clique
-         falharia, porque o React ainda nao renderizou quando o desenho comeca */
       if (!canvasRef.current) canvasRef.current = document.createElement('canvas')
-      setWarnings(await drawPost(canvasRef.current, a, modo))
-      const blob = await artToBlob()
-      setArtUrl(URL.createObjectURL(blob))
+      setWarnings(await drawPost(canvasRef.current, a, modo, aj))
     } catch (e) {
       console.error(e)
       setStatus({ ok: false, msg: 'Não foi possível gerar a arte: ' + e.message })
     }
+  }
+
+  const pickArticle = async (a) => {
+    const zerado = { dx: 0, dy: 0, zoom: 1 }
+    setSelected(a)
+    setCaption(buildCaption(a))
+    setAjuste(zerado)
+    setStatus(null)
+    setRendering(true)
+    await renderArt(a, enquadramento, zerado)
     setRendering(false)
   }
 
-  const pickArticle = (a) => {
-    setSelected(a)
-    setCaption(buildCaption(a))
-    renderArt(a, enquadramento)
+  const trocarEnquadramento = async (modo) => {
+    const zerado = { dx: 0, dy: 0, zoom: 1 }
+    setEnquadramento(modo)
+    setAjuste(zerado)
+    if (selected) await renderArt(selected, modo, zerado)
   }
 
-  const trocarEnquadramento = (modo) => {
-    setEnquadramento(modo)
-    if (selected) renderArt(selected, modo)
+  const mexerAjuste = (novo) => {
+    setAjuste(novo)
+    if (selected) renderArt(selected, enquadramento, novo)
+  }
+
+  /* arraste na propria arte: converte o movimento do mouse na tela para pixels
+     da imagem de 1080 de largura */
+  const aoPressionar = (e) => {
+    if (!selected) return
+    const canvas = canvasRef.current
+    arrasteRef.current = { x: e.clientX, y: e.clientY, base: ajuste, fator: canvas.width / canvas.getBoundingClientRect().width }
+    canvas.style.cursor = 'grabbing'
+    canvas.setPointerCapture?.(e.pointerId)
+  }
+
+  const aoMover = (e) => {
+    const a = arrasteRef.current
+    if (!a) return
+    mexerAjuste({
+      ...a.base,
+      dx: a.base.dx + (e.clientX - a.x) * a.fator,
+      dy: a.base.dy + (e.clientY - a.y) * a.fator,
+    })
+  }
+
+  const aoSoltar = () => {
+    arrasteRef.current = null
+    if (canvasRef.current) canvasRef.current.style.cursor = 'grab'
   }
 
   const artToBlob = () =>
@@ -430,7 +484,7 @@ export default function SocialPosts() {
                 </div>
 
                 <div style={{ opacity: rendering ? 0.5 : 1 }}>
-                  <PostPreview rede={redePreview} artUrl={artUrl} caption={caption} scheduleAt={scheduleAt} />
+                  <PostPreview rede={redePreview} holderRef={holderRef} caption={caption} scheduleAt={scheduleAt} />
                 </div>
 
                 <div style={{ marginTop: 12 }}>
@@ -447,6 +501,24 @@ export default function SocialPosts() {
                   </div>
                   <p style={{ fontSize: '0.68rem', color: '#9ca3af', marginTop: 5, lineHeight: 1.45 }}>
                     "Preencher" corta as bordas para ocupar tudo. "Foto inteira" mostra a imagem completa — use em cartaz e flyer.
+                  </p>
+                </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#6b7280', marginBottom: 6 }}>Ajuste manual</div>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button onClick={() => mexerAjuste({ ...ajuste, zoom: Math.max(1, +(ajuste.zoom - 0.1).toFixed(2)) })}
+                      style={btn('#fff', '#374151', '1px solid #e5e7eb')}>−</button>
+                    <span style={{ fontSize: '0.72rem', color: '#6b7280', minWidth: 42, textAlign: 'center' }}>
+                      {Math.round(ajuste.zoom * 100)}%
+                    </span>
+                    <button onClick={() => mexerAjuste({ ...ajuste, zoom: Math.min(3, +(ajuste.zoom + 0.1).toFixed(2)) })}
+                      style={btn('#fff', '#374151', '1px solid #e5e7eb')}>+</button>
+                    <button onClick={() => mexerAjuste({ dx: 0, dy: 0, zoom: 1 })}
+                      style={btn('#fff', '#6b7280', '1px solid #e5e7eb')}>Centralizar</button>
+                  </div>
+                  <p style={{ fontSize: '0.68rem', color: '#9ca3af', marginTop: 5, lineHeight: 1.45 }}>
+                    Arraste a foto direto na prévia para reposicionar. O deslocamento para nas bordas da imagem.
                   </p>
                 </div>
 
