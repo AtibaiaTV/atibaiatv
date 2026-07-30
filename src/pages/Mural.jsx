@@ -81,6 +81,12 @@ export default function Mural() {
                     position: 'absolute', top: 10, left: 10, fontSize: '0.66rem', fontWeight: 700,
                     background: '#fff', color: cat.color, padding: '4px 10px', borderRadius: 20,
                   }}>{cat.icon} {cat.label}</span>
+                  {item.status === 'resolvido' && (
+                    <span style={{
+                      position: 'absolute', top: 10, right: 10, fontSize: '0.66rem', fontWeight: 700, letterSpacing: '0.04em',
+                      background: '#059669', color: '#fff', padding: '4px 10px', borderRadius: 20,
+                    }}>✔ RESOLVIDO</span>
+                  )}
                 </div>
                 <div style={{ padding: '0.9rem 1rem' }}>
                   <p style={{ fontSize: '0.84rem', color: '#374151', lineHeight: 1.5, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>

@@ -7,6 +7,7 @@ const NAV = [
   { to: '/dashboard/videos', label: 'Videos', icon: '🎬' },
   { to: '/dashboard/denuncias', label: 'Denuncias', icon: '📮' },
   { to: '/dashboard/enquetes', label: 'Enquetes', icon: '📊' },
+  { to: '/dashboard/social', label: 'Redes Sociais', icon: '📣' },
   { to: '/dashboard/ticker', label: 'Ticker', icon: '📢' },
   { to: '/dashboard/banners', label: 'Banners', icon: '🖼️' },
 ]

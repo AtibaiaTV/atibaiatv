@@ -39,6 +39,8 @@ export default function DenunciasList() {
   async function handleStatusChange(row, newStatus) {
     setItems(function(list) { return list.map(function(it) { return it.id === row.id ? Object.assign({}, it, { status: newStatus }) : it }) })
     await updateDoc(doc(db, 'denuncias', row.id), { status: newStatus })
+    /* mantem a copia publica em sincronia pro mural mostrar a tarja RESOLVIDO */
+    if (published.has(row.id)) await updateDoc(doc(db, 'denuncias_publicas', row.id), { status: newStatus })
   }
 
   async function handleDelete(row) {
@@ -58,6 +60,7 @@ export default function DenunciasList() {
       location: row.location || '',
       mediaUrl: row.mediaUrl || '',
       createdAt: row.createdAt || null,
+      status: row.status || 'novo',
     })
     setPublished(function(set) { return new Set(set).add(row.id) })
   }

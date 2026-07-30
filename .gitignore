@@ -4,3 +4,7 @@ dist
 
 # Local Netlify folder
 .netlify
+
+# Cloudflare Pages (variaveis locais)
+.dev.vars
+.wrangler
