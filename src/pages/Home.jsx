@@ -81,11 +81,11 @@ export default function Home() {
                 <NewsCard news={featured} featured={true} />
               </div>
               <div className="atv-featured-enquete" style={{ height: 320 }}>
-                <EnqueteWidget fillHeight />
+                <EnqueteWidget compact fillHeight />
               </div>
             </div>
             <div className="atv-grid-sidenews">
-              {sideNews.map(function(n) { return <NewsCard key={n.id} news={n} /> })}
+              {sideNews.map(function(n) { return <NewsCard key={n.id} news={n} highlight={true} /> })}
             </div>
           </>
         )}

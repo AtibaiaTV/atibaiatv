@@ -51,7 +51,8 @@ html.atv-underline-links a { text-decoration: underline; }
 /* Grid helpers */
 .atv-grid-hero { display: grid; grid-template-columns: 2fr 1fr; gap: 2px; }
 .atv-grid-featured { display: grid; grid-template-columns: 2fr 320px; gap: 1rem; align-items: stretch; }
-.atv-grid-sidenews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #e5e7eb; border-radius: 12px; overflow: hidden; }
+.atv-grid-sidenews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.atv-grid-sidenews > a { border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
 .atv-grid-main { display: grid; grid-template-columns: 1fr 340px; gap: 2.5rem; align-items: start; }
 .atv-sidebar-sticky { position: sticky; top: 84px; }
 .atv-grid-article { display: grid; grid-template-columns: 1fr 300px; gap: 2rem; align-items: start; }
