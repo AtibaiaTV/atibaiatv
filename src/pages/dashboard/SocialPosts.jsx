@@ -87,7 +87,7 @@ function roundRect(ctx, x, y, w, h, r) {
 /* padrao visual da emissora: moldura branca, cabecalho com o logo redondo e o nome
    da editoria na cor dela, foto no miolo com o titulo sobre gradiente, e a barra
    de perfis no rodape */
-async function drawPost(canvas, article) {
+async function drawPost(canvas, article, enquadramento) {
   const ed = editoriaInfo(article.category)
   const ctx = canvas.getContext('2d')
   canvas.width = W
@@ -130,10 +130,29 @@ async function drawPost(canvas, article) {
   if (article.thumbnailUrl) {
     try {
       const img = await loadImage(proxied(article.thumbnailUrl), true)
-      const escala = Math.max(fw / img.width, fh / img.height)
-      const dw = img.width * escala
-      const dh = img.height * escala
-      ctx.drawImage(img, fx + (fw - dw) / 2, fy + (fh - dh) / 2, dw, dh)
+
+      if (enquadramento === 'inteira') {
+        /* cartaz e flyer perdem sentido cortados: encaixa a imagem inteira e
+           preenche o resto com uma versao desfocada dela mesma, para nao sobrar
+           tarja chapada */
+        const cobrir = Math.max(fw / img.width, fh / img.height)
+        ctx.save()
+        ctx.filter = 'blur(28px)'
+        ctx.drawImage(img, fx + (fw - img.width * cobrir) / 2, fy + (fh - img.height * cobrir) / 2, img.width * cobrir, img.height * cobrir)
+        ctx.restore()
+        ctx.fillStyle = 'rgba(10,16,28,0.28)'
+        ctx.fillRect(fx, fy, fw, fh)
+
+        const caber = Math.min(fw / img.width, fh / img.height)
+        const dw = img.width * caber
+        const dh = img.height * caber
+        ctx.drawImage(img, fx + (fw - dw) / 2, fy + (fh - dh) / 2, dw, dh)
+      } else {
+        const escala = Math.max(fw / img.width, fh / img.height)
+        const dw = img.width * escala
+        const dh = img.height * escala
+        ctx.drawImage(img, fx + (fw - dw) / 2, fy + (fh - dh) / 2, dw, dh)
+      }
     } catch (e) {
       aviso.push('A foto da matéria não pôde ser carregada — a arte saiu com o fundo padrão.')
     }
@@ -253,6 +272,7 @@ export default function SocialPosts() {
   const [warnings, setWarnings] = useState([])
   const [artUrl, setArtUrl] = useState('')
   const [redePreview, setRedePreview] = useState('instagram')
+  const [enquadramento, setEnquadramento] = useState('preencher')
   const canvasRef = useRef(null)
 
   /* libera o objectURL da arte anterior para não vazar memória ao trocar de matéria */
@@ -268,16 +288,14 @@ export default function SocialPosts() {
     })
   }, [])
 
-  const pickArticle = async (a) => {
-    setSelected(a)
-    setCaption(buildCaption(a))
+  const renderArt = async (a, modo) => {
     setStatus(null)
     setRendering(true)
     try {
       /* canvas em memoria: se dependesse do elemento no HTML, o primeiro clique
          falharia, porque o React ainda nao renderizou quando o desenho comeca */
       if (!canvasRef.current) canvasRef.current = document.createElement('canvas')
-      setWarnings(await drawPost(canvasRef.current, a))
+      setWarnings(await drawPost(canvasRef.current, a, modo))
       const blob = await artToBlob()
       setArtUrl(URL.createObjectURL(blob))
     } catch (e) {
@@ -285,6 +303,17 @@ export default function SocialPosts() {
       setStatus({ ok: false, msg: 'Não foi possível gerar a arte: ' + e.message })
     }
     setRendering(false)
+  }
+
+  const pickArticle = (a) => {
+    setSelected(a)
+    setCaption(buildCaption(a))
+    renderArt(a, enquadramento)
+  }
+
+  const trocarEnquadramento = (modo) => {
+    setEnquadramento(modo)
+    if (selected) renderArt(selected, modo)
   }
 
   const artToBlob = () =>
@@ -404,7 +433,24 @@ export default function SocialPosts() {
                   <PostPreview rede={redePreview} artUrl={artUrl} caption={caption} scheduleAt={scheduleAt} />
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#6b7280', marginBottom: 6 }}>Enquadramento da foto</div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[['preencher', 'Preencher'], ['inteira', 'Foto inteira']].map(([k, rotulo]) => (
+                      <button key={k} onClick={() => trocarEnquadramento(k)} style={{
+                        padding: '5px 12px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer',
+                        border: '1px solid ' + (enquadramento === k ? '#4971B1' : '#e5e7eb'),
+                        background: enquadramento === k ? '#eef3fa' : '#fff',
+                        color: enquadramento === k ? '#4971B1' : '#6b7280',
+                      }}>{rotulo}</button>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: '0.68rem', color: '#9ca3af', marginTop: 5, lineHeight: 1.45 }}>
+                    "Preencher" corta as bordas para ocupar tudo. "Foto inteira" mostra a imagem completa — use em cartaz e flyer.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                   <button onClick={download} style={btn('#fff', '#374151', '1px solid #e5e7eb')}>⬇️ Baixar arte</button>
                   <button onClick={copyCaption} style={btn('#fff', '#374151', '1px solid #e5e7eb')}>📋 Copiar legenda</button>
                 </div>
