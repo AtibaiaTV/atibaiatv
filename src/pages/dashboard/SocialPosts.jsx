@@ -9,8 +9,14 @@ import DashFormField, { inputStyle } from '../../components/dashboard/DashFormFi
 const W = 1080
 const H = 1350 // 4:5 — formato de feed aceito no Facebook e no Instagram
 const SITE = 'atibaiatv.com.br'
-const HANDLES = '/AtibaiaTv   ·   @atibaiatv_   ·   ' + SITE
+const HANDLES = '/AtibaiaTv   ·   @atibaia_tv   ·   ' + SITE
 const MAX_CAPTION = 2200 // limite do Instagram
+
+/* quanto de legenda cada rede mostra antes do "ver mais" */
+const REDES = {
+  instagram: { nome: 'atibaia_tv', corte: 125, maisTexto: '... mais', rotulo: 'Instagram' },
+  facebook: { nome: 'Atibaia TV', corte: 250, maisTexto: 'Ver mais', rotulo: 'Facebook' },
+}
 
 function editoriaInfo(label) {
   return EDITORIAS.find(ed => ed.label === label) || { label: label || 'Notícias', icon: '📰', color: '#4971B1' }
@@ -165,6 +171,50 @@ function buildCaption(article) {
   return cabeca + '\n\n' + body + pe
 }
 
+/* pinta as hashtags de azul, como as redes fazem */
+function textoComTags(texto) {
+  return texto.split(/(\s+)/).map((pedaco, i) =>
+    pedaco.startsWith('#')
+      ? <span key={i} style={{ color: '#00376b' }}>{pedaco}</span>
+      : <span key={i}>{pedaco}</span>
+  )
+}
+
+/* simula o card do feed para a pessoa ver onde a legenda corta e como a foto
+   fica enquadrada, antes de publicar de verdade */
+function PostPreview({ rede, artUrl, caption, scheduleAt }) {
+  const cfg = REDES[rede]
+  const cortou = caption.length > cfg.corte
+  const visivel = cortou ? caption.slice(0, cfg.corte).replace(/\s+\S*$/, '') : caption
+
+  return (
+    <div style={{ border: '1px solid #dbdbdb', borderRadius: 10, background: '#fff', overflow: 'hidden', maxWidth: 360 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px' }}>
+        <img src="/logos/logo-icon.png" alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain', background: '#f3f4f6' }} />
+        <div style={{ lineHeight: 1.2 }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1a2e' }}>{cfg.nome}</div>
+          <div style={{ fontSize: '0.68rem', color: '#8e8e8e' }}>
+            {scheduleAt ? 'agendado para ' + new Date(scheduleAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'agora'}
+          </div>
+        </div>
+      </div>
+
+      {artUrl
+        ? <img src={artUrl} alt="Prévia da arte" style={{ width: '100%', display: 'block' }} />
+        : <div style={{ width: '100%', aspectRatio: '4/5', background: '#f3f4f6' }} />}
+
+      <div style={{ padding: '10px 12px 14px' }}>
+        <div style={{ fontSize: '1.05rem', letterSpacing: 6, color: '#262626', marginBottom: 8 }}>♡ ♬ ↗</div>
+        <div style={{ fontSize: '0.78rem', color: '#262626', lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>
+          <b>{cfg.nome}</b>{' '}
+          {textoComTags(visivel)}
+          {cortou && <span style={{ color: '#8e8e8e' }}>{cfg.maisTexto}</span>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function SocialPosts() {
   const { user } = useAuth()
   const [articles, setArticles] = useState([])
@@ -177,7 +227,14 @@ export default function SocialPosts() {
   const [targets, setTargets] = useState({ facebook: true, instagram: true })
   const [status, setStatus] = useState(null)
   const [warnings, setWarnings] = useState([])
+  const [artUrl, setArtUrl] = useState('')
+  const [redePreview, setRedePreview] = useState('instagram')
   const canvasRef = useRef(null)
+
+  /* libera o objectURL da arte anterior para não vazar memória ao trocar de matéria */
+  useEffect(() => {
+    return () => { if (artUrl) URL.revokeObjectURL(artUrl) }
+  }, [artUrl])
 
   useEffect(() => {
     const q = query(collection(db, 'articles'), orderBy('createdAt', 'desc'))
@@ -194,6 +251,8 @@ export default function SocialPosts() {
     setRendering(true)
     try {
       setWarnings(await drawPost(canvasRef.current, a))
+      const blob = await artToBlob()
+      setArtUrl(URL.createObjectURL(blob))
     } catch (e) {
       console.error(e)
       setStatus({ ok: false, msg: 'Não foi possível gerar a arte: ' + e.message })
@@ -303,7 +362,24 @@ export default function SocialPosts() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 320px) 1fr', gap: '1.25rem', alignItems: 'start' }}>
               <div>
-                <canvas ref={canvasRef} style={{ width: '100%', borderRadius: 12, border: '1px solid #e5e7eb', display: 'block', opacity: rendering ? 0.5 : 1 }} />
+                <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                  {Object.keys(REDES).map(k => (
+                    <button key={k} onClick={() => setRedePreview(k)} style={{
+                      padding: '5px 12px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer',
+                      border: '1px solid ' + (redePreview === k ? '#4971B1' : '#e5e7eb'),
+                      background: redePreview === k ? '#eef3fa' : '#fff',
+                      color: redePreview === k ? '#4971B1' : '#6b7280',
+                    }}>{REDES[k].rotulo}</button>
+                  ))}
+                </div>
+
+                <div style={{ opacity: rendering ? 0.5 : 1 }}>
+                  <PostPreview rede={redePreview} artUrl={artUrl} caption={caption} scheduleAt={scheduleAt} />
+                </div>
+
+                {/* fica fora da tela: serve só para exportar o JPEG */}
+                <canvas ref={canvasRef} style={{ display: 'none' }} />
+
                 <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                   <button onClick={download} style={btn('#fff', '#374151', '1px solid #e5e7eb')}>⬇️ Baixar arte</button>
                   <button onClick={copyCaption} style={btn('#fff', '#374151', '1px solid #e5e7eb')}>📋 Copiar legenda</button>

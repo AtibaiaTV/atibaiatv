@@ -236,7 +236,7 @@ export const CONTATO = {
   telefone: '(11) 97497-6540',
   emailRedacao: 'atibaiatv2013@gmail.com',
   emailComercial: 'atibaiatv2013@gmail.com',
-  instagram: 'https://www.instagram.com/atibaiatv_/',
+  instagram: 'https://www.instagram.com/atibaia_tv/',
   facebook: 'https://www.facebook.com/AtibaiaTv/',
   youtube: 'https://www.youtube.com/@Atibaia_tv',
   whatsapp: 'https://wa.me/5511999785370',
