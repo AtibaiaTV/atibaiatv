@@ -21,15 +21,25 @@ export default function MarketWidget() {
   var dollarState = useState(null)
   var dollar = dollarState[0]
   var setDollar = dollarState[1]
+  var euroState = useState(null)
+  var euro = euroState[0]
+  var setEuro = euroState[1]
+  var ouroState = useState(null)
+  var ouro = ouroState[0]
+  var setOuro = ouroState[1]
   var errorState = useState(false)
   var error = errorState[0]
   var setError = errorState[1]
   var chartRef = useRef(null)
 
   useEffect(function() {
-    fetch('https://economia.awesomeapi.com.br/last/USD-BRL')
+    fetch('https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,XAU-BRL')
       .then(function(r) { if (!r.ok) throw new Error('erro'); return r.json() })
-      .then(function(json) { setDollar(json.USDBRL) })
+      .then(function(json) {
+        setDollar(json.USDBRL)
+        setEuro(json.EURBRL)
+        setOuro(json.XAUBRL)
+      })
       .catch(function() { setError(true) })
   }, [])
 
@@ -71,24 +81,52 @@ export default function MarketWidget() {
 
       <div style={{ padding: '1rem 1.1rem' }}>
         {!error && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: '1.1rem' }}>💵</span>
-              <div>
-                <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Dólar</div>
-                <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1a1a2e' }}>
-                  {dollar ? 'R$ ' + fmtMoney(dollar.bid) : '...'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: '1.1rem' }}>💵</span>
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Dólar</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1a1a2e' }}>
+                    {dollar ? 'R$ ' + fmtMoney(dollar.bid) : '...'}
+                  </div>
                 </div>
               </div>
+              {dollar && <ChangeTag pct={dollar.pctChange} />}
             </div>
-            {dollar && <ChangeTag pct={dollar.pctChange} />}
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: '1.1rem' }}>💶</span>
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Euro</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1a1a2e' }}>
+                    {euro ? 'R$ ' + fmtMoney(euro.bid) : '...'}
+                  </div>
+                </div>
+              </div>
+              {euro && <ChangeTag pct={euro.pctChange} />}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: '1.1rem' }}>🥇</span>
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Ouro (g)</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1a1a2e' }}>
+                    {ouro ? 'R$ ' + fmtMoney(ouro.bid) : '...'}
+                  </div>
+                </div>
+              </div>
+              {ouro && <ChangeTag pct={ouro.pctChange} />}
+            </div>
           </div>
         )}
 
         <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginBottom: 4 }}>Ibovespa</div>
         <div ref={chartRef} style={{ minHeight: 90 }} />
 
-        <div style={{ fontSize: '0.62rem', color: '#c4c8cf', marginTop: 8 }}>Dólar: AwesomeAPI · Ibovespa: TradingView</div>
+        <div style={{ fontSize: '0.62rem', color: '#c4c8cf', marginTop: 8 }}>Dólar, Euro, Ouro: AwesomeAPI · Ibovespa: TradingView</div>
       </div>
     </div>
   )

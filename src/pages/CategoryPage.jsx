@@ -55,7 +55,7 @@ export default function CategoryPage() {
   return (
     <>
       <div className="atv-banner-wrap" style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderBottom: '1px solid #e5e7eb' }}>
-        <AdBanner type="billboard" src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'} />
+        <AdBanner type="billboard" src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard-denuncie.png'} />
       </div>
 
       <div style={{ background: editoria?.bg || 'var(--blue-light)', borderBottom: '1px solid var(--border)', padding: '1.5rem 1rem' }}>

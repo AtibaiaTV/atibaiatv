@@ -68,7 +68,7 @@ export default function Home() {
         <div className="atv-container">
           <AdBanner
             type="billboard"
-            src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard.gif'}
+            src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard-denuncie.png'}
             href={billboard && billboard.linkUrl ? billboard.linkUrl : '/participe'}
           />
         </div>
@@ -78,11 +78,11 @@ export default function Home() {
       <div className="atv-container" style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
         {!loading && featured && (
           <>
-            <div className="atv-grid-featured" style={{ marginBottom: '1rem' }}>
+            <div className="atv-grid-featured" style={{ marginBottom: '1rem', alignItems: 'start' }}>
               <div style={{ background: '#e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
                 <NewsCard news={featured} featured={true} />
               </div>
-              <div className="atv-featured-enquete">
+              <div className="atv-featured-enquete" style={{ height: 320 }}>
                 <EnqueteWidget fillHeight />
               </div>
             </div>
