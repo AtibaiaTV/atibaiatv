@@ -63,16 +63,14 @@ export default function Home() {
 
   return (
     <>
-      {/* BANNER TOPO — billboard, sozinho */}
-      <div style={bannerWrap}>
-        <div className="atv-container">
-          <AdBanner
-            type="billboard"
-            src={billboard ? billboard.mediaUrl : '/banners/prefeitura-abril26/billboard-denuncie.png'}
-            href={billboard && billboard.linkUrl ? billboard.linkUrl : '/participe'}
-          />
+      {/* BANNER TOPO — billboard, sozinho (some se nao houver banner ativo) */}
+      {billboard && (
+        <div style={bannerWrap}>
+          <div className="atv-container">
+            <AdBanner type="billboard" src={billboard.mediaUrl} href={billboard.linkUrl || '/participe'} />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* HERO — materia principal + enquete ao lado, materias menores abaixo */}
       <div className="atv-container" style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
