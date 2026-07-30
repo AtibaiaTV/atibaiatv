@@ -4,8 +4,9 @@ import { db } from '../../firebase'
 import { useNavigate, Link } from 'react-router-dom'
 import DashTable from '../../components/dashboard/DashTable'
 import { TAG_STYLES } from '../../data'
+import { useAcessosPorPagina } from '../../hooks/useAnalytics'
 
-const COLUMNS = [
+const COLUMNS = (acessos) => [
   {
     key: 'title', label: 'Titulo',
     render: (row) => (
@@ -23,6 +24,17 @@ const COLUMNS = [
   },
   { key: 'author', label: 'Autor' },
   {
+    key: 'acessos', label: 'Acessos',
+    render: (row) => {
+      const n = acessos['article-' + row.id] || 0
+      return (
+        <span style={{ fontWeight: 600, color: n > 0 ? '#1a1a2e' : '#d1d5db' }}>
+          {n > 0 ? n.toLocaleString('pt-BR') : '—'}
+        </span>
+      )
+    },
+  },
+  {
     key: 'featured', label: 'Destaque',
     render: (row) => row.featured ? '⭐' : '—',
   },
@@ -36,6 +48,7 @@ export default function ArticlesList() {
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+  const { acessos } = useAcessosPorPagina()
 
   const fetchArticles = async () => {
     const q = query(collection(db, 'articles'), orderBy('createdAt', 'desc'))
@@ -66,7 +79,7 @@ export default function ArticlesList() {
         </Link>
       </div>
       <DashTable
-        columns={COLUMNS}
+        columns={COLUMNS(acessos)}
         data={articles}
         onEdit={(row) => navigate(`/dashboard/articles/${row.id}`)}
         onDelete={handleDelete}

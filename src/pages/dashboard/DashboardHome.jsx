@@ -2,14 +2,19 @@ import { useState, useEffect } from 'react'
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
 import { db } from '../../firebase'
 import DashCard from '../../components/dashboard/DashCard'
+import MapaAcessos from '../../components/dashboard/MapaAcessos'
 import { seedFirestore } from '../../utils/seedFirestore'
 import { Link } from 'react-router-dom'
+import { useVisitantes, useOnline, useCidades } from '../../hooks/useAnalytics'
 
 export default function DashboardHome() {
   const [stats, setStats] = useState({ articles: 0, videos: 0, banners: 0, totalViews: 0 })
   const [recentArticles, setRecentArticles] = useState([])
   const [topPages, setTopPages] = useState([])
   const [loading, setLoading] = useState(true)
+  const visitantes = useVisitantes()
+  const online = useOnline()
+  const cidades = useCidades()
 
   useEffect(() => {
     async function fetchStats() {
@@ -65,6 +70,58 @@ export default function DashboardHome() {
         <DashCard icon="🎬" label="Videos" value={stats.videos} color="#67AA4D" />
         <DashCard icon="🖼️" label="Banners" value={stats.banners} color="#c47a00" />
         <DashCard icon="👁️" label="Visualizacoes" value={stats.totalViews.toLocaleString('pt-BR')} color="#Cd0000" />
+      </div>
+
+      {/* ── Audiência ────────────────────────────────────────────────────── */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', padding: '1.25rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: 10 }}>
+          <h2 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1a1a2e' }}>Audiência</h2>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '0.8rem', color: '#374151' }}>
+            <span style={{ width: 9, height: 9, borderRadius: '50%', background: online > 0 ? '#059669' : '#d1d5db' }} />
+            <b>{online}</b> {online === 1 ? 'pessoa online agora' : 'pessoas online agora'}
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
+          {[
+            ['Hoje', visitantes.hoje],
+            ['Neste mês', visitantes.mes],
+            ['Neste ano', visitantes.ano],
+            ['Todo o histórico', visitantes.total],
+          ].map(([rotulo, valor]) => (
+            <div key={rotulo} style={{ border: '1px solid #f3f4f6', borderRadius: 10, padding: '0.85rem 1rem' }}>
+              <div style={{ fontSize: '0.68rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{rotulo}</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a1a2e', marginTop: 2 }}>
+                {valor.toLocaleString('pt-BR')}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* visitas por dia, últimos 30 dias */}
+        {visitantes.serie.length > 0 && (
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6b7280', marginBottom: 8 }}>ÚLTIMOS 30 DIAS</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 80 }}>
+              {visitantes.serie.map(d => {
+                const maxD = Math.max(...visitantes.serie.map(x => x.visitas), 1)
+                return (
+                  <div key={d.data} title={d.data + ': ' + d.visitas}
+                    style={{ flex: 1, height: Math.max(3, (d.visitas / maxD) * 80), background: '#4971B1', borderRadius: '3px 3px 0 0' }} />
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6b7280', marginBottom: 10 }}>DE ONDE VÊM OS ACESSOS</div>
+        <MapaAcessos cidades={cidades} />
+
+        <p style={{ fontSize: '0.68rem', color: '#9ca3af', marginTop: 12, lineHeight: 1.5 }}>
+          {visitantes.desde
+            ? 'Dados coletados desde ' + visitantes.desde.split('-').reverse().join('/') + '. Não guardamos IP nem dados pessoais — só a cidade aproximada informada pelo Cloudflare.'
+            : 'A coleta começa a partir do primeiro acesso após esta atualização. Não guardamos IP nem dados pessoais.'}
+        </p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>

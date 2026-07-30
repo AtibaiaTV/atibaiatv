@@ -10,7 +10,8 @@ import BannerCarousel from '../components/BannerCarousel'
 import useArticles from '../hooks/useArticles'
 import useVideos from '../hooks/useVideos'
 import useBanners from '../hooks/useBanners'
-import { trackPageView } from '../hooks/usePageViews'
+import { trackPageView, trackVisit, useMarcarPresenca } from '../hooks/usePageViews'
+import { useMaisLidas } from '../hooks/useAnalytics'
 
 var bannerWrap = {
   background: '#f4f5f7',
@@ -37,7 +38,17 @@ export default function Home() {
   var banners        = bannersData.banners
   var getBanner      = bannersData.getBanner
 
-  useEffect(function() { trackPageView('home') }, [])
+  var abaState = useState('lidas')
+  var abaRanking = abaState[0]
+  var setAbaRanking = abaState[1]
+
+  var maisLidasData = useMaisLidas(7)
+
+  useEffect(function() {
+    trackPageView('home')
+    trackVisit()
+  }, [])
+  useMarcarPresenca()
 
   var billboard   = getBanner('billboard')
   var leaderboard = getBanner('leaderboard')
@@ -50,7 +61,17 @@ export default function Home() {
   var restNews     = articles.slice(4)
   var latestVideo  = videos[0] || null
   var shortVideos  = videos.filter(function(v) { return v.format === 'short' })
-  var maisLidas    = articles.slice(0, 6)
+  var recentes     = articles.slice(0, 6)
+
+  /* ranking real dos últimos 7 dias: junta o número de acessos a cada matéria e
+     descarta as que ninguém leu, para a lista não virar uma cópia das recentes */
+  var lidas = articles
+    .map(function(a) { return Object.assign({}, a, { acessos: maisLidasData.ranking['article-' + a.id] || 0 }) })
+    .filter(function(a) { return a.acessos > 0 })
+    .sort(function(a, b) { return b.acessos - a.acessos })
+    .slice(0, 6)
+
+  var listaRanking = abaRanking === 'lidas' ? lidas : recentes
 
   /* usa leaderboard dedicado; se não houver, usa o primeiro billboard de vídeo */
   var leaderVideoSrc = (leaderboard && leaderboard.mediaType === 'video')
@@ -154,8 +175,13 @@ export default function Home() {
             <BannerCarousel banners={squareBanners} width={300} height={300} />
           </div>
 
-          {/* Mais lidas — ranking numerado */}
-          <TrendingList items={maisLidas} />
+          {/* Ranking numerado: mais lidas dos últimos 7 dias ou mais recentes */}
+          <TrendingList
+            items={listaRanking}
+            aba={abaRanking}
+            onTrocarAba={setAbaRanking}
+            vazio={maisLidasData.carregando ? 'Carregando...' : 'Ainda não há leituras registradas nos últimos 7 dias.'}
+          />
 
           {/* 1 video mais recente */}
           {latestVideo && (
