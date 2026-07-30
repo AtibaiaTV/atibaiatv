@@ -9,7 +9,16 @@ import DashFormField, { inputStyle } from '../../components/dashboard/DashFormFi
 const W = 1080
 const H = 1350 // 4:5 — formato de feed aceito no Facebook e no Instagram
 const SITE = 'atibaiatv.com.br'
-const HANDLES = '/AtibaiaTv   ·   @atibaia_tv   ·   ' + SITE
+const LOGO_REDONDO = '/logos/RS_logo_triang_redondo.png'
+const BARRA_PERFIS = '/logos/RS_Logos_hor.png'
+
+/* medidas da arte, no padrão do modelo da emissora: moldura branca, cabeçalho com
+   logo e editoria, foto ocupando o miolo e a barra de perfis no rodapé */
+const MARGEM = 36
+const CAB_ALTURA = 150
+const BARRA_ALTURA = 14
+const FOTO_TOPO = CAB_ALTURA + BARRA_ALTURA + 28
+const RODAPE_ALTURA = 142
 const MAX_CAPTION = 2200 // limite do Instagram
 
 /* quanto de legenda cada rede mostra antes do "ver mais" */
@@ -73,8 +82,9 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath()
 }
 
-/* padrao visual por editoria: foto de capa, faixa e chip na cor da editoria,
-   logo, titulo sobre gradiente escuro e rodape com os perfis */
+/* padrao visual da emissora: moldura branca, cabecalho com o logo redondo e o nome
+   da editoria na cor dela, foto no miolo com o titulo sobre gradiente, e a barra
+   de perfis no rodape */
 async function drawPost(canvas, article) {
   const ed = editoriaInfo(article.category)
   const ctx = canvas.getContext('2d')
@@ -82,16 +92,46 @@ async function drawPost(canvas, article) {
   canvas.height = H
   const aviso = []
 
-  ctx.fillStyle = '#0f1b2d'
+  ctx.fillStyle = '#fff'
   ctx.fillRect(0, 0, W, H)
+
+  // ── cabecalho ──────────────────────────────────────────────────────────────
+  try {
+    const logo = await loadImage(LOGO_REDONDO)
+    const d = 104
+    ctx.drawImage(logo, MARGEM + 8, (CAB_ALTURA - d) / 2, d, d)
+  } catch (e) { /* segue sem logo */ }
+
+  ctx.font = '800 76px Arial'
+  ctx.fillStyle = ed.color
+  ctx.textBaseline = 'middle'
+  ctx.fillText(ed.label, MARGEM + 8 + 104 + 26, CAB_ALTURA / 2 + 3)
+
+  // faixa da editoria separando cabecalho e foto
+  ctx.fillStyle = ed.color
+  ctx.fillRect(MARGEM, CAB_ALTURA, W - MARGEM * 2, BARRA_ALTURA)
+
+  // ── foto ───────────────────────────────────────────────────────────────────
+  const fx = MARGEM
+  const fy = FOTO_TOPO
+  const fw = W - MARGEM * 2
+  const fh = H - RODAPE_ALTURA - FOTO_TOPO
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(fx, fy, fw, fh)
+  ctx.clip()
+
+  ctx.fillStyle = '#0f1b2d'
+  ctx.fillRect(fx, fy, fw, fh)
 
   if (article.thumbnailUrl) {
     try {
       const img = await loadImage(proxied(article.thumbnailUrl), true)
-      const scale = Math.max(W / img.width, H / img.height)
-      const dw = img.width * scale
-      const dh = img.height * scale
-      ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh)
+      const escala = Math.max(fw / img.width, fh / img.height)
+      const dw = img.width * escala
+      const dh = img.height * escala
+      ctx.drawImage(img, fx + (fw - dw) / 2, fy + (fh - dh) / 2, dw, dh)
     } catch (e) {
       aviso.push('A foto da matéria não pôde ser carregada — a arte saiu com o fundo padrão.')
     }
@@ -99,63 +139,47 @@ async function drawPost(canvas, article) {
     aviso.push('Esta matéria não tem foto de capa; a arte saiu com o fundo padrão.')
   }
 
-  ctx.fillStyle = ed.color
-  ctx.fillRect(0, 0, W, 16)
+  // ── titulo sobre a foto ────────────────────────────────────────────────────
+  ctx.font = '800 58px Arial'
+  const linhas = wrapText(ctx, article.title, fw - 88, 4)
+  const alturaLinha = 70
+  const blocoAltura = linhas.length * alturaLinha + 56
 
-  // chip da editoria
-  ctx.font = '700 42px Arial'
-  const chipText = ed.icon + '  ' + ed.label.toUpperCase()
-  const chipW = ctx.measureText(chipText).width + 56
-  ctx.fillStyle = ed.color
-  roundRect(ctx, W - chipW - 36, 52, chipW, 78, 39)
-  ctx.fill()
-  ctx.fillStyle = '#fff'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(chipText, W - chipW - 36 + 28, 52 + 41)
-
-  // logo em cartao branco
-  try {
-    const logo = await loadImage('/logos/logo-horizontal.png')
-    const lh = 64
-    const lw = logo.width * (lh / logo.height)
-    ctx.fillStyle = '#fff'
-    roundRect(ctx, 36, 52, lw + 48, 78, 14)
-    ctx.fill()
-    ctx.drawImage(logo, 60, 52 + (78 - lh) / 2, lw, lh)
-  } catch (e) { /* segue sem logo */ }
-
-  // gradiente para o titulo ficar legivel sobre qualquer foto
-  const grad = ctx.createLinearGradient(0, H * 0.45, 0, H)
+  const grad = ctx.createLinearGradient(0, fy + fh - blocoAltura - 150, 0, fy + fh)
   grad.addColorStop(0, 'rgba(10,16,28,0)')
-  grad.addColorStop(0.55, 'rgba(10,16,28,0.72)')
-  grad.addColorStop(1, 'rgba(10,16,28,0.97)')
+  grad.addColorStop(0.45, 'rgba(10,16,28,0.78)')
+  grad.addColorStop(1, 'rgba(10,16,28,0.94)')
   ctx.fillStyle = grad
-  ctx.fillRect(0, 0, W, H)
+  ctx.fillRect(fx, fy + fh - blocoAltura - 150, fw, blocoAltura + 150)
 
-  // titulo
-  ctx.font = '800 62px Arial'
   ctx.fillStyle = '#fff'
   ctx.textBaseline = 'alphabetic'
-  const lines = wrapText(ctx, article.title, W - 120, 4)
-  const lineH = 76
-  const footerH = 96
-  let y = H - footerH - 48 - (lines.length - 1) * lineH
-  ctx.fillStyle = ed.color
-  ctx.fillRect(60, y - 92, 110, 10)
-  ctx.fillStyle = '#fff'
-  for (const l of lines) {
-    ctx.fillText(l, 60, y)
-    y += lineH
+  let y = fy + fh - 44 - (linhas.length - 1) * alturaLinha
+  for (const l of linhas) {
+    ctx.fillText(l, fx + 44, y)
+    y += alturaLinha
   }
+  ctx.restore()
 
-  // rodape
-  ctx.fillStyle = ed.color
-  ctx.fillRect(0, H - footerH, W, footerH)
-  ctx.font = '600 34px Arial'
-  ctx.fillStyle = '#fff'
-  ctx.textBaseline = 'middle'
-  const tw = ctx.measureText(HANDLES).width
-  ctx.fillText(HANDLES, (W - tw) / 2, H - footerH / 2)
+  // contorno fino da foto, na cor da editoria
+  ctx.strokeStyle = ed.color
+  ctx.lineWidth = 3
+  ctx.strokeRect(fx + 1.5, fy + 1.5, fw - 3, fh - 3)
+
+  // ── rodape com os perfis ───────────────────────────────────────────────────
+  try {
+    const barra = await loadImage(BARRA_PERFIS)
+    const bw = W - MARGEM * 2 - 60
+    const bh = barra.height * (bw / barra.width)
+    ctx.drawImage(barra, (W - bw) / 2, H - RODAPE_ALTURA + (RODAPE_ALTURA - bh) / 2, bw, bh)
+  } catch (e) {
+    // sem a barra de perfis, escreve os enderecos em texto
+    ctx.font = '600 34px Arial'
+    ctx.fillStyle = '#373435'
+    ctx.textBaseline = 'middle'
+    const t = '@atibaia_tv   ·   @AtibaiaTv   ·   ' + SITE
+    ctx.fillText(t, (W - ctx.measureText(t).width) / 2, H - RODAPE_ALTURA / 2)
+  }
 
   return aviso
 }
@@ -190,7 +214,7 @@ function PostPreview({ rede, artUrl, caption, scheduleAt }) {
   return (
     <div style={{ border: '1px solid #dbdbdb', borderRadius: 10, background: '#fff', overflow: 'hidden', maxWidth: 360 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px' }}>
-        <img src="/logos/logo-icon.png" alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain', background: '#f3f4f6' }} />
+        <img src={LOGO_REDONDO} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain' }} />
         <div style={{ lineHeight: 1.2 }}>
           <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1a2e' }}>{cfg.nome}</div>
           <div style={{ fontSize: '0.68rem', color: '#8e8e8e' }}>
@@ -250,6 +274,9 @@ export default function SocialPosts() {
     setStatus(null)
     setRendering(true)
     try {
+      /* canvas em memoria: se dependesse do elemento no HTML, o primeiro clique
+         falharia, porque o React ainda nao renderizou quando o desenho comeca */
+      if (!canvasRef.current) canvasRef.current = document.createElement('canvas')
       setWarnings(await drawPost(canvasRef.current, a))
       const blob = await artToBlob()
       setArtUrl(URL.createObjectURL(blob))
@@ -376,9 +403,6 @@ export default function SocialPosts() {
                 <div style={{ opacity: rendering ? 0.5 : 1 }}>
                   <PostPreview rede={redePreview} artUrl={artUrl} caption={caption} scheduleAt={scheduleAt} />
                 </div>
-
-                {/* fica fora da tela: serve só para exportar o JPEG */}
-                <canvas ref={canvasRef} style={{ display: 'none' }} />
 
                 <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                   <button onClick={download} style={btn('#fff', '#374151', '1px solid #e5e7eb')}>⬇️ Baixar arte</button>
