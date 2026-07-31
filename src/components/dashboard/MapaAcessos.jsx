@@ -1,52 +1,90 @@
-/* Mapa dos acessos sem depender de biblioteca ou de mapa externo.
+import { useEffect, useRef, useState } from 'react'
 
-   As coordenadas de cada cidade são projetadas direto num retângulo que cobre o
-   Brasil (projeção equiretangular simples). Quem cair fora dessa faixa aparece
-   na lista lateral, não no mapa — em vez de ser jogado numa borda qualquer. */
+/* Mapa real dos acessos, com Leaflet e ladrilhos do OpenStreetMap.
 
-const OESTE = -74, LESTE = -34, NORTE = 6, SUL = -34
-
-function posicao(lat, lon) {
-  return {
-    x: ((lon - OESTE) / (LESTE - OESTE)) * 100,
-    y: ((NORTE - lat) / (NORTE - SUL)) * 100,
-  }
-}
+   A biblioteca entra por import dinâmico de propósito: ela só é baixada quando
+   alguém abre o painel, e não pesa no carregamento do site público. */
 
 export default function MapaAcessos({ cidades }) {
-  const noBrasil = cidades.filter(c =>
-    c.lat != null && c.lon != null && c.lat <= NORTE && c.lat >= SUL && c.lon >= OESTE && c.lon <= LESTE
-  )
-  const maior = Math.max(...cidades.map(c => c.count || 0), 1)
+  const divRef = useRef(null)
+  const mapaRef = useRef(null)
+  const camadaRef = useRef(null)
+  const [erro, setErro] = useState(false)
+
+  useEffect(() => {
+    let cancelado = false
+
+    async function montar() {
+      try {
+        const L = (await import('leaflet')).default
+        await import('leaflet/dist/leaflet.css')
+        if (cancelado || !divRef.current) return
+
+        if (!mapaRef.current) {
+          mapaRef.current = L.map(divRef.current, { scrollWheelZoom: false })
+            .setView([-15.8, -47.9], 4)
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap',
+            maxZoom: 18,
+          }).addTo(mapaRef.current)
+          camadaRef.current = L.layerGroup().addTo(mapaRef.current)
+        }
+
+        const L2 = L
+        camadaRef.current.clearLayers()
+
+        const comCoord = cidades.filter(c => c.lat != null && c.lon != null)
+        if (comCoord.length === 0) return
+
+        const maior = Math.max(...comCoord.map(c => c.count || 0), 1)
+
+        comCoord.forEach(c => {
+          const raio = 8 + (c.count / maior) * 22
+          L2.circleMarker([c.lat, c.lon], {
+            radius: raio,
+            color: '#Cd0000',
+            weight: 2,
+            fillColor: '#Cd0000',
+            fillOpacity: 0.45,
+          })
+            .bindPopup('<b>' + c.cidade + (c.estado ? '/' + c.estado : '') + '</b><br>' +
+              (c.count || 0).toLocaleString('pt-BR') + ' acesso' + (c.count === 1 ? '' : 's'))
+            .addTo(camadaRef.current)
+        })
+
+        /* enquadra todos os pontos; com um só, mantém um zoom que ainda mostra
+           a região em volta, senão o mapa "cola" na rua da pessoa */
+        const limites = L2.latLngBounds(comCoord.map(c => [c.lat, c.lon]))
+        mapaRef.current.fitBounds(limites, { padding: [30, 30], maxZoom: 9 })
+      } catch (e) {
+        console.error(e)
+        if (!cancelado) setErro(true)
+      }
+    }
+
+    montar()
+    return () => { cancelado = true }
+  }, [cidades])
+
+  useEffect(() => {
+    return () => {
+      if (mapaRef.current) { mapaRef.current.remove(); mapaRef.current = null }
+    }
+  }, [])
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: '1rem', alignItems: 'start' }}>
-      <div style={{
-        position: 'relative', width: '100%', aspectRatio: '1 / 1',
-        background: '#eef3fa', borderRadius: 10, border: '1px solid #e5e7eb', overflow: 'hidden',
-      }}>
-        {/* linhas de referência: equador e trópico de capricórnio */}
-        {[{ lat: 0, rot: 'Equador' }, { lat: -23.44, rot: 'Trópico de Capricórnio' }].map(l => (
-          <div key={l.rot} style={{ position: 'absolute', left: 0, right: 0, top: posicao(l.lat, 0).y + '%', borderTop: '1px dashed #c9d6e8' }}>
-            <span style={{ position: 'absolute', left: 6, top: 2, fontSize: '0.55rem', color: '#9db2cd' }}>{l.rot}</span>
-          </div>
-        ))}
+      <div style={{ position: 'relative', width: '100%', height: 360, borderRadius: 10, border: '1px solid #e5e7eb', overflow: 'hidden', background: '#eef3fa' }}>
+        <div ref={divRef} style={{ width: '100%', height: '100%' }} />
 
-        {noBrasil.map(c => {
-          const p = posicao(c.lat, c.lon)
-          const d = 8 + (c.count / maior) * 26
-          return (
-            <div key={c.id} title={c.cidade + ' — ' + c.count + ' acessos'} style={{
-              position: 'absolute', left: p.x + '%', top: p.y + '%',
-              width: d, height: d, marginLeft: -d / 2, marginTop: -d / 2,
-              borderRadius: '50%', background: 'rgba(205,0,0,0.55)', border: '1.5px solid #Cd0000',
-            }} />
-          )
-        })}
-
-        {noBrasil.length === 0 && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9db2cd', fontSize: '0.78rem', textAlign: 'center', padding: '1rem' }}>
-            Ainda não há acessos com localização registrada.
+        {(erro || cidades.length === 0) && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: '#eef3fa', color: '#7d93b2', fontSize: '0.78rem', textAlign: 'center', padding: '1rem',
+          }}>
+            {erro
+              ? 'Não foi possível carregar o mapa. A lista de cidades ao lado continua valendo.'
+              : 'Ainda não há acessos com localização registrada.'}
           </div>
         )}
       </div>
@@ -54,14 +92,21 @@ export default function MapaAcessos({ cidades }) {
       <div>
         <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6b7280', marginBottom: 8 }}>CIDADES</div>
         {cidades.length === 0 && <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Sem dados ainda.</p>}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 300, overflowY: 'auto' }}>
-          {cidades.slice(0, 20).map(c => (
-            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.74rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 330, overflowY: 'auto' }}>
+          {cidades.slice(0, 25).map(c => (
+            <button key={c.id}
+              onClick={() => {
+                if (mapaRef.current && c.lat != null) mapaRef.current.setView([c.lat, c.lon], 11)
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.74rem',
+                border: 'none', background: 'none', padding: '3px 0', cursor: 'pointer', textAlign: 'left',
+              }}>
               <span style={{ flex: 1, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {c.cidade}{c.estado ? '/' + c.estado : ''}
               </span>
               <span style={{ fontWeight: 700, color: '#1a1a2e' }}>{(c.count || 0).toLocaleString('pt-BR')}</span>
-            </div>
+            </button>
           ))}
         </div>
       </div>
