@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import LivePlayer from '../components/LivePlayer'
 import AdBanner from '../components/AdBanner'
+import BannerCarousel from '../components/BannerCarousel'
 import { trackPageView } from '../hooks/usePageViews'
 import { SCHEDULE, RECENT_VIDEOS } from '../data'
 import VideoCard from '../components/VideoCard'
@@ -8,17 +9,17 @@ import useBanners from '../hooks/useBanners'
 
 export default function AoVivo() {
   const [activeTab, setActiveTab] = useState('grade')
-  const { getBanner } = useBanners()
-  const billboard = getBanner('billboard')
-  const leaderboard = getBanner('leaderboard')
+  const { banners } = useBanners()
+  const billboardBanners = banners.filter(b => b.type === 'billboard')
+  const leaderboardBanners = banners.filter(b => b.type === 'leaderboard')
 
   useEffect(() => { trackPageView("ao-vivo") }, [])
   return (
     <>
-      {/* Banner topo */}
-      {billboard && (
+      {/* Banner topo — intercala entre todos os billboards ativos */}
+      {billboardBanners.length > 0 && (
         <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'center', padding: '10px 2rem' }}>
-          <AdBanner type="billboard" src={billboard.mediaUrl} href={billboard.linkUrl || '#'} />
+          <BannerCarousel type="billboard" banners={billboardBanners} />
         </div>
       )}
 
@@ -76,12 +77,10 @@ export default function AoVivo() {
             </div>
           </div>
 
-          {/* Banner após player */}
-          {leaderboard && (
+          {/* Banner após player — intercala entre todos os leaderboards ativos */}
+          {leaderboardBanners.length > 0 && (
             <div style={{ marginTop: '1.5rem' }}>
-              {leaderboard.mediaType === 'video'
-                ? <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
-                : <AdBanner type="leaderboard" src={leaderboard.mediaUrl} href={leaderboard.linkUrl || '#'} />}
+              <BannerCarousel type="leaderboard" banners={leaderboardBanners} />
             </div>
           )}
         </div>

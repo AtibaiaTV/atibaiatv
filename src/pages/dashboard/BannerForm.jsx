@@ -10,7 +10,7 @@ export default function BannerForm() {
   const navigate = useNavigate()
   const isEdit = Boolean(id)
 
-  const [form, setForm] = useState({ type: 'billboard', mediaUrl: '', mediaType: 'image', href: '', active: true })
+  const [form, setForm] = useState({ type: 'billboard', mediaUrl: '', mediaType: 'image', linkUrl: '', active: true })
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(isEdit)
 

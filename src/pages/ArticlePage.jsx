@@ -9,6 +9,7 @@ import useBanners from '../hooks/useBanners'
 import { trackPageView, usePageViewCount } from '../hooks/usePageViews'
 import NewsCard from '../components/NewsCard'
 import AdBanner from '../components/AdBanner'
+import BannerCarousel from '../components/BannerCarousel'
 import VideoCard from '../components/VideoCard'
 
 export default function ArticlePage() {
@@ -17,7 +18,7 @@ export default function ArticlePage() {
   const [loading, setLoading] = useState(true)
   const { articles } = useArticles()
   const { videos } = useVideos()
-  const { getBanner } = useBanners()
+  const { banners } = useBanners()
   const views = usePageViewCount('article-' + id)
 
   useEffect(() => {
@@ -33,9 +34,11 @@ export default function ArticlePage() {
 
   const tagStyle = TAG_STYLES[news.category] || TAG_STYLES['Notícias']
   const related = articles.filter(n => n.category === news.category && n.id !== news.id).slice(0, 4)
-  const billboard = getBanner('billboard')
-  const leaderboard = getBanner('leaderboard')
-  const square = getBanner('square')
+  /* cada espaco roda entre todos os banners ativos do seu tipo, em vez de travar
+     sempre no primeiro cadastrado e esconder os demais */
+  const billboardBanners = banners.filter(b => b.type === 'billboard')
+  const leaderboardBanners = banners.filter(b => b.type === 'leaderboard')
+  const squareBanners = banners.filter(b => b.type === 'square')
 
   const CARD_BG = {
     blue: 'linear-gradient(135deg, #eef3fa, #c8d8ef)',
@@ -48,9 +51,11 @@ export default function ArticlePage() {
 
   return (
     <>
-      <div className="atv-banner-wrap" style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderBottom: '1px solid #e5e7eb' }}>
-        {billboard && <AdBanner type="billboard" src={billboard.mediaUrl} href={billboard.linkUrl || '#'} />}
-      </div>
+      {billboardBanners.length > 0 && (
+        <div className="atv-banner-wrap" style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderBottom: '1px solid #e5e7eb' }}>
+          <BannerCarousel type="billboard" banners={billboardBanners} />
+        </div>
+      )}
 
       <div className="atv-container atv-grid-article atv-section-pad">
         <article>
@@ -89,11 +94,9 @@ export default function ArticlePage() {
             ))}
           </div>
 
-          {leaderboard && (
+          {leaderboardBanners.length > 0 && (
             <div style={{ margin: '2rem 0' }}>
-              {leaderboard.mediaType === 'video'
-                ? <AdBanner type="leaderboard" video={leaderboard.mediaUrl} />
-                : <AdBanner type="leaderboard" src={leaderboard.mediaUrl} href={leaderboard.linkUrl || '#'} />}
+              <BannerCarousel type="leaderboard" banners={leaderboardBanners} />
             </div>
           )}
 
@@ -111,7 +114,9 @@ export default function ArticlePage() {
         </article>
 
         <aside style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <AdBanner type="square" src={square ? square.mediaUrl : '/banners/prefeitura-abril26/square.gif'} />
+          {squareBanners.length > 0
+            ? <BannerCarousel banners={squareBanners} width={300} height={300} />
+            : <AdBanner type="square" src="/banners/prefeitura-abril26/square.gif" />}
           <div>
             <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#Cd0000', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
               Videos <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
@@ -120,7 +125,9 @@ export default function ArticlePage() {
               {videos.slice(0, 3).map(v => <VideoCard key={v.id} video={v} />)}
             </div>
           </div>
-          <AdBanner type="square" src={square ? square.mediaUrl : '/banners/prefeitura-abril26/square.gif'} />
+          {squareBanners.length > 0
+            ? <BannerCarousel banners={squareBanners} width={300} height={300} />
+            : <AdBanner type="square" src="/banners/prefeitura-abril26/square.gif" />}
         </aside>
       </div>
     </>

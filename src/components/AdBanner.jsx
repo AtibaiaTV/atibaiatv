@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-const SIZES = {
+export const SIZES = {
   billboard:   { maxWidth: 1920, maxHeight: 180, label: 'Publicidade' },
   leaderboard: { maxWidth: 970,  maxHeight: 180, label: 'Publicidade' },
   square:      { maxWidth: 300,  maxHeight: 300, label: 'Publicidade' },

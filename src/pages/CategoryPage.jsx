@@ -7,6 +7,7 @@ import useBanners from '../hooks/useBanners'
 import { trackPageView } from '../hooks/usePageViews'
 import NewsCard from '../components/NewsCard'
 import AdBanner from '../components/AdBanner'
+import BannerCarousel from '../components/BannerCarousel'
 import VideoCard from '../components/VideoCard'
 import SidebarWidgets from '../components/SidebarWidgets'
 
@@ -42,21 +43,23 @@ export default function CategoryPage() {
   const tagStyle = { bg: editoria?.bg || '#eef3fa', color: editoria?.color || '#4971B1' }
   const { articles: news, loading } = useArticles(category)
   const { videos } = useVideos()
-  const { getBanner } = useBanners()
+  const { banners } = useBanners()
   const featured = news[0]
   const rest = news.slice(1)
-  const billboard = getBanner('billboard')
-  const square = getBanner('square')
-  const leaderboard = getBanner('leaderboard')
+  /* cada espaco roda entre todos os banners ativos do seu tipo, em vez de travar
+     sempre no primeiro cadastrado e esconder os demais */
+  const billboardBanners = banners.filter(b => b.type === 'billboard')
+  const squareBanners = banners.filter(b => b.type === 'square')
+  const leaderboardBanners = banners.filter(b => b.type === 'leaderboard')
 
   useEffect(() => { trackPageView('category-' + slug) }, [slug])
   useEffect(() => { setVisibleCount(PAGE_SIZE) }, [slug])
 
   return (
     <>
-      {billboard && (
+      {billboardBanners.length > 0 && (
         <div className="atv-banner-wrap" style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderBottom: '1px solid #e5e7eb' }}>
-          <AdBanner type="billboard" src={billboard.mediaUrl} href={billboard.linkUrl || '#'} />
+          <BannerCarousel type="billboard" banners={billboardBanners} />
         </div>
       )}
 
@@ -107,20 +110,18 @@ export default function CategoryPage() {
               )}
             </>
           )}
-          {leaderboard && (
+          {leaderboardBanners.length > 0 && (
             <div style={{ marginTop: '1.5rem' }}>
-              <AdBanner
-                type="leaderboard"
-                src={leaderboard.mediaType !== 'video' ? leaderboard.mediaUrl : null}
-                video={leaderboard.mediaType === 'video' ? leaderboard.mediaUrl : null}
-              />
+              <BannerCarousel type="leaderboard" banners={leaderboardBanners} />
             </div>
           )}
         </div>
 
         <aside className="atv-sidebar-sticky" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <SidebarWidgets />
-          <AdBanner type="square" src={square ? square.mediaUrl : '/banners/prefeitura-abril26/square.gif'} />
+          {squareBanners.length > 0
+            ? <BannerCarousel banners={squareBanners} width={300} height={300} />
+            : <AdBanner type="square" src="/banners/prefeitura-abril26/square.gif" />}
           <div>
             <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#Cd0000', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
               Videos recentes <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
@@ -129,7 +130,9 @@ export default function CategoryPage() {
               {videos.slice(0, 3).map(v => <VideoCard key={v.id} video={v} />)}
             </div>
           </div>
-          <AdBanner type="square" src={square ? square.mediaUrl : '/banners/prefeitura-abril26/square.gif'} />
+          {squareBanners.length > 0
+            ? <BannerCarousel banners={squareBanners} width={300} height={300} />
+            : <AdBanner type="square" src="/banners/prefeitura-abril26/square.gif" />}
         </aside>
       </div>
     </>

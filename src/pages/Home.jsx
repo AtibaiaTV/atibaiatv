@@ -5,7 +5,6 @@ import ShortVideos from '../components/ShortVideos'
 import TrendingList from '../components/TrendingList'
 import SidebarWidgets from '../components/SidebarWidgets'
 import EnqueteWidget from '../components/EnqueteWidget'
-import AdBanner from '../components/AdBanner'
 import BannerCarousel from '../components/BannerCarousel'
 import useArticles from '../hooks/useArticles'
 import useVideos from '../hooks/useVideos'
@@ -36,7 +35,6 @@ export default function Home() {
 
   var bannersData    = useBanners()
   var banners        = bannersData.banners
-  var getBanner      = bannersData.getBanner
 
   var abaState = useState('lidas')
   var abaRanking = abaState[0]
@@ -50,11 +48,17 @@ export default function Home() {
   }, [])
   useMarcarPresenca()
 
-  var billboard   = getBanner('billboard')
-  var leaderboard = getBanner('leaderboard')
+  /* cada espaco roda entre TODOS os banners ativos do seu tipo — antes so o
+     primeiro cadastrado aparecia e os demais ficavam escondidos pra sempre */
+  var billboardBanners   = banners.filter(function(b) { return b.type === 'billboard' })
+  var squareBanners      = banners.filter(function(b) { return b.type === 'square' })
 
-  /* todos os squares para o carrossel */
-  var squareBanners = banners.filter(function(b) { return b.type === 'square' })
+  /* se nao houver leaderboard dedicado, usa os billboards em video nesse espaco —
+     mesma regra de antes, so que agora intercalando quando houver mais de um */
+  var leaderboardBanners = banners.filter(function(b) { return b.type === 'leaderboard' })
+  if (leaderboardBanners.length === 0) {
+    leaderboardBanners = banners.filter(function(b) { return b.type === 'billboard' && b.mediaType === 'video' })
+  }
 
   var featured     = articles[0]
   var sideNews     = articles.slice(1, 4)
@@ -73,22 +77,13 @@ export default function Home() {
 
   var listaRanking = abaRanking === 'lidas' ? lidas : recentes
 
-  /* usa leaderboard dedicado; se não houver, usa o primeiro billboard de vídeo */
-  var leaderVideoSrc = (leaderboard && leaderboard.mediaType === 'video')
-    ? leaderboard.mediaUrl
-    : (banners.find(function(b) { return b.type === 'billboard' && b.mediaType === 'video' }) || {}).mediaUrl || null
-
-  var leaderEl = leaderVideoSrc
-    ? <AdBanner type="leaderboard" video={leaderVideoSrc} />
-    : null
-
   return (
     <>
-      {/* BANNER TOPO — billboard, sozinho (some se nao houver banner ativo) */}
-      {billboard && (
+      {/* BANNER TOPO — todos os billboards ativos, intercalando entre si */}
+      {billboardBanners.length > 0 && (
         <div style={bannerWrap}>
           <div className="atv-container">
-            <AdBanner type="billboard" src={billboard.mediaUrl} href={billboard.linkUrl || '/participe'} />
+            <BannerCarousel type="billboard" banners={billboardBanners} />
           </div>
         </div>
       )}
@@ -120,12 +115,14 @@ export default function Home() {
       {/* VIDEOS CURTOS — carrossel vertical */}
       <ShortVideos videos={shortVideos} />
 
-      {/* BANNER MEIO — leaderboard */}
-      <div style={bannerWrap}>
-        <div className="atv-container">
-          {leaderEl}
+      {/* BANNER MEIO — leaderboard, intercalando */}
+      {leaderboardBanners.length > 0 && (
+        <div style={bannerWrap}>
+          <div className="atv-container">
+            <BannerCarousel type="leaderboard" banners={leaderboardBanners} />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* CONTEUDO + SIDEBAR */}
       <div className="atv-container atv-grid-main" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
@@ -200,12 +197,14 @@ export default function Home() {
         </aside>
       </div>
 
-      {/* BANNER RODAPE — leaderboard */}
-      <div style={bannerWrap}>
-        <div className="atv-container">
-          {leaderEl}
+      {/* BANNER RODAPE — leaderboard, intercalando */}
+      {leaderboardBanners.length > 0 && (
+        <div style={bannerWrap}>
+          <div className="atv-container">
+            <BannerCarousel type="leaderboard" banners={leaderboardBanners} />
+          </div>
         </div>
-      </div>
+      )}
     </>
   )
 }
