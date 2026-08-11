@@ -97,8 +97,55 @@ funcionou nos dois. Não é preciso desconectar a @redesa_tv.
 O Instagram precisa ser **conta profissional** (Comercial ou Criador). Não é necessário
 passar por revisão da Meta para postar em contas que você mesmo administra.
 
+## Carrossel
+
+A matéria tem uma foto só (`thumbnailUrl`), então a capa vem dela e as fotos
+extras são enviadas no painel, em **+ Foto**. Todas passam pela mesma arte, sem o
+título — que já aparece na capa —, para o conjunto ficar uniforme. Cada foto tem
+miniatura numerada; clicar nela mostra o slide na prévia e o **×** remove.
+
+O limite é de **10 fotos**, imposto pelo Instagram. Cada rede monta o carrossel
+do seu jeito, e a função cuida disso:
+
+- **Facebook** — cada foto é enviada com `published: false` e depois anexada a um
+  post de `/feed` em `attached_media`.
+- **Instagram** — cada foto vira um container filho (`is_carousel_item`) e todos
+  entram num container `media_type=CAROUSEL`, que é o publicado.
+
+## Histórico e exclusão
+
+Cada publicação vira um documento na coleção **`socialPosts`** do Firestore, com
+a legenda, as artes e — o que importa para excluir — os **ids que a Meta
+devolveu**. Sem esses ids não haveria como apagar nada depois.
+
+A seção **Publicados**, no fim da tela, oferece duas ações separadas:
+
+- **Excluir da rede** — apaga a publicação de fato, via `/api/social-delete`.
+- **Remover do histórico** — tira o post da lista; o que está no ar continua no ar.
+
+### Regra do Firestore
+
+A coleção é nova. Sem liberar o acesso, o post sai nas redes mas não entra no
+histórico — e aí o "Excluir da rede" fica sem os ids. Em **Firebase Console →
+Firestore Database → Regras**, acrescente o bloco abaixo **dentro** do
+`match /databases/{database}/documents` que já existe (não substitua o arquivo):
+
+```
+match /socialPosts/{postId} {
+  // só o painel lê e escreve: o histórico expõe o que foi publicado e por quem
+  allow read, write: if request.auth != null;
+}
+```
+
+O painel é protegido por login do Firebase Auth, então `request.auth != null`
+equivale a "quem tem acesso ao painel". Quem só visita o site não precisa ler
+esta coleção — por isso ela não é pública, ao contrário de `articles`.
+
 ## Limites da plataforma (não são limitações da ferramenta)
 
+- **Excluir publicação**: o Facebook tem endpoint de exclusão; o **Instagram não
+  tem nenhum** na Graph API. Um post do Instagram só sai pelo app, à mão. A
+  confirmação na tela diz quais redes a ação alcança antes de você confirmar.
 - **Agendamento**: existe só no Facebook, entre 10 minutos e 75 dias de antecedência.
   A API do Instagram não agenda — publica na hora. Para agendar no Instagram só
   pelo Meta Business Suite, à mão.
