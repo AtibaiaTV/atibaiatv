@@ -15,6 +15,7 @@
 const GRAPH = 'https://graph.facebook.com/v26.0'
 const FB_MIN_SCHEDULE_S = 10 * 60          // a Meta exige no minimo 10 minutos
 const FB_MAX_SCHEDULE_S = 75 * 24 * 3600   // e no maximo 75 dias
+const MAX_CARROSSEL = 10                   // limite de itens do carrossel no Instagram
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -52,6 +53,66 @@ async function graph(path, params) {
   return data
 }
 
+async function graphGet(path, params) {
+  const res = await fetch(GRAPH + path + '?' + new URLSearchParams(params))
+  const data = await res.json()
+  if (data.error) throw new Error(data.error.error_user_msg || data.error.message)
+  return data
+}
+
+/* No Facebook um carrossel é um post de feed com fotos enviadas sem publicar e
+   depois anexadas a ele; a Meta espera cada anexo num campo indexado */
+async function publishFacebookCarousel(pageId, token, urls, caption, agendamento) {
+  const ids = []
+  for (const url of urls) {
+    const foto = await graph('/' + pageId + '/photos', { url, published: 'false', access_token: token })
+    ids.push(foto.id)
+  }
+
+  const params = { message: caption, access_token: token }
+  ids.forEach((id, i) => { params['attached_media[' + i + ']'] = JSON.stringify({ media_fbid: id }) })
+  if (agendamento) {
+    params.published = 'false'
+    params.scheduled_publish_time = String(agendamento)
+  }
+
+  const post = await graph('/' + pageId + '/feed', params)
+  return post.id
+}
+
+/* No Instagram cada foto vira um container filho e todos entram num container
+   do tipo CAROUSEL, que é o que de fato é publicado */
+async function publishInstagramCarousel(igUserId, token, urls, caption) {
+  const filhos = []
+  for (const url of urls) {
+    const filho = await graph('/' + igUserId + '/media', {
+      image_url: url, is_carousel_item: 'true', access_token: token,
+    })
+    filhos.push(filho.id)
+  }
+
+  const container = await graph('/' + igUserId + '/media', {
+    media_type: 'CAROUSEL', children: filhos.join(','), caption, access_token: token,
+  })
+  await waitForContainer(container.id, token)
+
+  const publicado = await graph('/' + igUserId + '/media_publish', {
+    creation_id: container.id, access_token: token,
+  })
+  return publicado.id
+}
+
+/* o link do post só existe depois de publicado; sem ele o histórico ainda serve,
+   então uma falha aqui não derruba a publicação */
+async function instagramPermalink(mediaId, token) {
+  try {
+    const data = await graphGet('/' + mediaId, { fields: 'permalink', access_token: token })
+    return data.permalink || null
+  } catch {
+    return null
+  }
+}
+
 /* o container do Instagram costuma ficar pronto na hora, mas a Meta recomenda
    conferir o status antes de publicar */
 async function waitForContainer(id, token) {
@@ -87,8 +148,15 @@ export async function onRequestPost(context) {
     return json({ error: 'Configuracao da Meta ausente: defina META_ACCESS_TOKEN e META_PAGE_ID no Cloudflare.' }, 500)
   }
 
+  /* imageUrls e a forma nova (carrossel); imageUrl continua aceito para nao
+     quebrar quem chamar a funcao do jeito antigo */
   const { imageUrl, caption, scheduleAt, targets } = body
-  if (!imageUrl || !caption) return json({ error: 'imageUrl e caption sao obrigatorios' }, 400)
+  const urls = Array.isArray(body.imageUrls) && body.imageUrls.length ? body.imageUrls : imageUrl ? [imageUrl] : []
+  if (!urls.length || !caption) return json({ error: 'imageUrl(s) e caption sao obrigatorios' }, 400)
+  if (urls.length > MAX_CARROSSEL) {
+    return json({ error: 'O carrossel aceita no maximo ' + MAX_CARROSSEL + ' fotos.' }, 400)
+  }
+  const ehCarrossel = urls.length > 1
 
   const wantFacebook = !targets || targets.facebook !== false
   const pediuInstagram = !targets || targets.instagram !== false
@@ -96,6 +164,8 @@ export async function onRequestPost(context) {
 
   const results = []
   const errors = []
+  /* ids do que saiu no ar: sem eles o painel nao teria como excluir depois */
+  const published = []
 
   /* sem o META_IG_USER_ID nao da para publicar no Instagram; avisa em vez de
      ignorar em silencio, senao parece que o post saiu nas duas redes */
@@ -105,18 +175,36 @@ export async function onRequestPost(context) {
 
   if (wantFacebook) {
     try {
-      const params = { url: imageUrl, caption, access_token: token }
+      let agendamento = null
       if (scheduleAt) {
         const when = Math.floor(new Date(scheduleAt).getTime() / 1000)
         if (isNaN(when)) throw new Error('Data de agendamento invalida.')
         const delta = when - Math.floor(Date.now() / 1000)
         if (delta < FB_MIN_SCHEDULE_S) throw new Error('O Facebook exige agendar com pelo menos 10 minutos de antecedencia.')
         if (delta > FB_MAX_SCHEDULE_S) throw new Error('O Facebook aceita agendamento de no maximo 75 dias.')
-        params.published = 'false'
-        params.scheduled_publish_time = String(when)
+        agendamento = when
       }
-      await graph('/' + pageId + '/photos', params)
+
+      let postId
+      if (ehCarrossel) {
+        postId = await publishFacebookCarousel(pageId, token, urls, caption, agendamento)
+      } else {
+        const params = { url: urls[0], caption, access_token: token }
+        if (agendamento) {
+          params.published = 'false'
+          params.scheduled_publish_time = String(agendamento)
+        }
+        const foto = await graph('/' + pageId + '/photos', params)
+        postId = foto.post_id || foto.id
+      }
+
       results.push(scheduleAt ? 'Facebook: agendado' : 'Facebook: publicado')
+      published.push({
+        network: 'facebook',
+        id: postId,
+        permalink: 'https://www.facebook.com/' + postId,
+        scheduled: Boolean(scheduleAt),
+      })
     } catch (e) {
       errors.push('Facebook: ' + e.message)
     }
@@ -124,15 +212,28 @@ export async function onRequestPost(context) {
 
   if (wantInstagram) {
     try {
-      const media = await graph('/' + igUserId + '/media', { image_url: imageUrl, caption, access_token: token })
-      await waitForContainer(media.id, token)
-      await graph('/' + igUserId + '/media_publish', { creation_id: media.id, access_token: token })
+      let mediaId
+      if (ehCarrossel) {
+        mediaId = await publishInstagramCarousel(igUserId, token, urls, caption)
+      } else {
+        const media = await graph('/' + igUserId + '/media', { image_url: urls[0], caption, access_token: token })
+        await waitForContainer(media.id, token)
+        const publicado = await graph('/' + igUserId + '/media_publish', { creation_id: media.id, access_token: token })
+        mediaId = publicado.id
+      }
+
       results.push('Instagram: publicado')
+      published.push({
+        network: 'instagram',
+        id: mediaId,
+        permalink: await instagramPermalink(mediaId, token),
+        scheduled: false,
+      })
     } catch (e) {
       errors.push('Instagram: ' + e.message)
     }
   }
 
   if (!results.length) return json({ error: errors.join(' · ') || 'nada foi publicado' }, 502)
-  return json({ results, errors })
+  return json({ results, errors, published })
 }
