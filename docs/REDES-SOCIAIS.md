@@ -108,7 +108,9 @@ O limite é de **10 fotos**, imposto pelo Instagram. Cada rede monta o carrossel
 do seu jeito, e a função cuida disso:
 
 - **Facebook** — cada foto é enviada com `published: false` e depois anexada a um
-  post de `/feed` em `attached_media`.
+  post de `/feed` em `attached_media`. Isso vale **mesmo para uma foto só**:
+  publicar direto em `/photos` cria uma *foto*, que vai para o álbum da página e
+  aparece como foto no feed, em vez de sair como post.
 - **Instagram** — cada foto vira um container filho (`is_carousel_item`) e todos
   entram num container `media_type=CAROUSEL`, que é o publicado.
 

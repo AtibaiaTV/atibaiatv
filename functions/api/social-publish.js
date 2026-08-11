@@ -60,9 +60,14 @@ async function graphGet(path, params) {
   return data
 }
 
-/* No Facebook um carrossel é um post de feed com fotos enviadas sem publicar e
-   depois anexadas a ele; a Meta espera cada anexo num campo indexado */
-async function publishFacebookCarousel(pageId, token, urls, caption, agendamento) {
+/* Publica no feed da pagina, com uma ou varias fotos.
+
+   Vale para uma foto so tambem, de proposito: mandar direto para /photos cria
+   uma publicacao do tipo *foto* — vai para o album da pagina e aparece como
+   foto no feed, nao como post. Enviando a foto sem publicar e anexando ela a
+   uma historia de /feed, sai um post normal com imagem, que e o que se espera.
+   A Meta quer cada anexo num campo indexado. */
+async function publishFacebookPost(pageId, token, urls, caption, agendamento) {
   const ids = []
   for (const url of urls) {
     const foto = await graph('/' + pageId + '/photos', { url, published: 'false', access_token: token })
@@ -185,18 +190,7 @@ export async function onRequestPost(context) {
         agendamento = when
       }
 
-      let postId
-      if (ehCarrossel) {
-        postId = await publishFacebookCarousel(pageId, token, urls, caption, agendamento)
-      } else {
-        const params = { url: urls[0], caption, access_token: token }
-        if (agendamento) {
-          params.published = 'false'
-          params.scheduled_publish_time = String(agendamento)
-        }
-        const foto = await graph('/' + pageId + '/photos', params)
-        postId = foto.post_id || foto.id
-      }
+      const postId = await publishFacebookPost(pageId, token, urls, caption, agendamento)
 
       results.push(scheduleAt ? 'Facebook: agendado' : 'Facebook: publicado')
       published.push({
