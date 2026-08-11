@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { collection, getDocs, orderBy, query } from 'firebase/firestore'
+import { addDoc, collection, getDocs, orderBy, query, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import { EDITORIAS } from '../../data'
 import DashFormField, { inputStyle } from '../../components/dashboard/DashFormField'
+import SocialPostsHistory from './SocialPostsHistory'
 
 const W = 1080
 const H = 1350 // 4:5 — formato de feed aceito no Facebook e no Instagram
@@ -22,6 +23,7 @@ const FOTO_TOPO = CAB_ALTURA + BARRA_ALTURA + RESPIRO
 const RODAPE_ALTURA = 118                                    // faixa dos perfis
 const BARRA_BAIXO_Y = H - RODAPE_ALTURA - BARRA_ALTURA       // 2a faixa, como no modelo
 const MAX_CAPTION = 2200 // limite do Instagram
+const MAX_CARROSSEL = 10 // limite de itens do carrossel no Instagram
 
 /* quanto de legenda cada rede mostra antes do "ver mais" */
 const REDES = {
@@ -285,6 +287,11 @@ export default function SocialPosts() {
   const [redePreview, setRedePreview] = useState('instagram')
   const [enquadramento, setEnquadramento] = useState('preencher')
   const [ajuste, setAjuste] = useState({ dx: 0, dy: 0, zoom: 1 })
+  /* fotos extras do carrossel: a matéria tem uma foto só, entao as demais sao
+     enviadas aqui e passam pela mesma arte, para o carrossel ficar uniforme */
+  const [extras, setExtras] = useState([])
+  const [slideAtivo, setSlideAtivo] = useState(0)
+  const [recarregarHistorico, setRecarregarHistorico] = useState(0)
   const canvasRef = useRef(null)
   const holderRef = useRef(null)
   const arrasteRef = useRef(null)
@@ -325,15 +332,69 @@ export default function SocialPosts() {
     }
   }
 
+  /* o slide 0 é a matéria; os demais sao as fotos extras, desenhadas na mesma
+     moldura porem sem o titulo, que ja apareceu na capa */
+  const slideDoIndice = (indice, lista = extras) => {
+    if (indice === 0) return selected
+    const extra = lista[indice - 1]
+    return extra && { ...selected, title: '', thumbnailUrl: extra.url }
+  }
+
   const pickArticle = async (a) => {
     const zerado = { dx: 0, dy: 0, zoom: 1 }
     setSelected(a)
     setCaption(buildCaption(a))
     setAjuste(zerado)
     setStatus(null)
+    setExtras([])
+    setSlideAtivo(0)
     setRendering(true)
     await renderArt(a, enquadramento, zerado)
     setRendering(false)
+  }
+
+  /* a lista entra por parâmetro porque logo depois de adicionar fotos o estado
+     ainda é o anterior, e a prévia iria parar no slide errado */
+  const verSlide = async (indice, lista = extras) => {
+    const alvo = slideDoIndice(indice, lista)
+    if (!alvo) return
+    setSlideAtivo(indice)
+    setRendering(true)
+    await renderArt(alvo, enquadramento, ajuste)
+    setRendering(false)
+  }
+
+  const adicionarFotos = async (event) => {
+    const arquivos = Array.from(event.target.files || [])
+    event.target.value = ''
+    if (!arquivos.length) return
+
+    const espaco = MAX_CARROSSEL - 1 - extras.length
+    if (espaco <= 0) {
+      setStatus({ ok: false, msg: 'O carrossel aceita no máximo ' + MAX_CARROSSEL + ' fotos.' })
+      return
+    }
+    if (arquivos.length > espaco) {
+      setStatus({ ok: false, msg: 'Só cabem mais ' + espaco + ' foto(s) neste carrossel; as demais foram ignoradas.' })
+    }
+
+    const novos = arquivos.slice(0, espaco).map(file => ({
+      id: file.name + '-' + Date.now() + '-' + Math.round(performance.now()),
+      nome: file.name,
+      url: URL.createObjectURL(file),
+    }))
+    const lista = [...extras, ...novos]
+    setExtras(lista)
+    await verSlide(lista.length, lista)
+  }
+
+  const removerFoto = async (indice) => {
+    const extra = extras[indice - 1]
+    if (extra) URL.revokeObjectURL(extra.url)
+    const restantes = extras.filter((_, i) => i !== indice - 1)
+    setExtras(restantes)
+    setSlideAtivo(0)
+    if (selected) await renderArt(selected, enquadramento, ajuste)
   }
 
   const trocarEnquadramento = async (modo) => {
@@ -401,6 +462,25 @@ export default function SocialPosts() {
     setStatus({ ok: true, msg: 'Legenda copiada.' })
   }
 
+  /* cada slide passa pelo mesmo canvas: desenha, exporta e envia. O canvas volta
+     para o slide que estava na tela quando termina */
+  const enviarSlides = async () => {
+    const total = 1 + extras.length
+    const urls = []
+
+    for (let i = 0; i < total; i++) {
+      await renderArt(slideDoIndice(i), enquadramento, ajuste)
+      const blob = await artToBlob()
+      const caminho = 'social/' + selected.id + '-' + Date.now() + '-' + i + '.jpg'
+      const storageRef = ref(storage, caminho)
+      await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' })
+      urls.push(await getDownloadURL(storageRef))
+    }
+
+    await renderArt(slideDoIndice(slideAtivo), enquadramento, ajuste)
+    return urls
+  }
+
   const publish = async () => {
     if (!targets.facebook && !targets.instagram) {
       setStatus({ ok: false, msg: 'Escolha ao menos uma rede.' })
@@ -409,24 +489,36 @@ export default function SocialPosts() {
     setPublishing(true)
     setStatus(null)
     try {
-      const blob = await artToBlob()
-      const storageRef = ref(storage, 'social/' + selected.id + '-' + Date.now() + '.jpg')
-      await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' })
-      const imageUrl = await getDownloadURL(storageRef)
+      const imageUrls = await enviarSlides()
 
       const idToken = await user.getIdToken()
       const res = await fetch('/api/social-publish', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ idToken, imageUrl, caption, scheduleAt, targets }),
+        body: JSON.stringify({ idToken, imageUrls, caption, scheduleAt, targets }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'erro inesperado')
+
+      /* o histórico guarda os ids que a Meta devolveu — sem eles nao ha como
+         apagar a publicacao depois */
+      await addDoc(collection(db, 'socialPosts'), {
+        articleId: selected.id,
+        title: selected.title || '',
+        caption,
+        imageUrls,
+        published: data.published || [],
+        errors: data.errors || [],
+        scheduleAt: scheduleAt || null,
+        createdAt: serverTimestamp(),
+        createdBy: user.email || '',
+      })
 
       setStatus({
         ok: true,
         msg: data.results.join('  ·  ') + (data.errors && data.errors.length ? '  |  ' + data.errors.join(' · ') : ''),
       })
+      setRecarregarHistorico(n => n + 1)
     } catch (e) {
       console.error(e)
       setStatus({ ok: false, msg: 'Erro ao publicar: ' + e.message })
@@ -525,6 +617,61 @@ export default function SocialPosts() {
                   </p>
                 </div>
 
+                {/* carrossel: a capa vem da matéria e as demais fotos entram aqui */}
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#6b7280' }}>
+                      Carrossel ({1 + extras.length}/{MAX_CARROSSEL})
+                    </div>
+                    <label style={{ ...btn('#fff', '#374151', '1px solid #e5e7eb'), padding: '6px 12px', fontSize: '0.72rem' }}>
+                      + Foto
+                      <input type="file" accept="image/*" multiple onChange={adicionarFotos} style={{ display: 'none' }} />
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {Array.from({ length: 1 + extras.length }).map((_, i) => (
+                      <div key={i} style={{ position: 'relative' }}>
+                        <button
+                          onClick={() => verSlide(i)}
+                          title={i === 0 ? 'Capa (foto da matéria)' : 'Foto ' + (i + 1)}
+                          style={{
+                            width: 62, height: 78, padding: 0, borderRadius: 8, overflow: 'hidden', cursor: 'pointer',
+                            background: '#f3f4f6',
+                            border: '2px solid ' + (slideAtivo === i ? '#4971B1' : '#e5e7eb'),
+                          }}
+                        >
+                          <img
+                            src={i === 0 ? proxied(selected.thumbnailUrl) : extras[i - 1].url}
+                            alt={'Foto ' + (i + 1)}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                          />
+                        </button>
+                        <span style={{
+                          position: 'absolute', left: 4, bottom: 4, background: 'rgba(0,0,0,0.65)',
+                          color: '#fff', fontSize: '0.6rem', borderRadius: 4, padding: '0 4px',
+                        }}>{i + 1}</span>
+                        {i > 0 && (
+                          <button
+                            onClick={() => removerFoto(i)}
+                            title={'Excluir a foto ' + (i + 1)}
+                            aria-label={'Excluir a foto ' + (i + 1)}
+                            style={{
+                              position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%',
+                              border: 'none', background: '#Cd0000', color: '#fff', fontSize: '0.7rem',
+                              lineHeight: 1, cursor: 'pointer',
+                            }}
+                          >×</button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: '0.68rem', color: '#9ca3af', marginTop: 5, lineHeight: 1.45 }}>
+                    A capa é a foto da matéria. As fotos extras passam pela mesma arte, sem o título,
+                    e o post sai como carrossel nas duas redes.
+                  </p>
+                </div>
+
                 <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                   <button onClick={download} style={btn('#fff', '#374151', '1px solid #e5e7eb')}>⬇️ Baixar arte</button>
                   <button onClick={copyCaption} style={btn('#fff', '#374151', '1px solid #e5e7eb')}>📋 Copiar legenda</button>
@@ -571,6 +718,12 @@ export default function SocialPosts() {
           )}
         </div>
       </div>
+
+      <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1a1a2e', margin: '2rem 0 0.35rem' }}>Publicados</h2>
+      <p style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: '1rem' }}>
+        O que já saiu nas redes, com link e opção de excluir.
+      </p>
+      <SocialPostsHistory recarregar={recarregarHistorico} />
     </>
   )
 }
