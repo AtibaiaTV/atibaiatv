@@ -123,23 +123,38 @@ A seção **Publicados**, no fim da tela, oferece duas ações separadas:
 - **Excluir da rede** — apaga a publicação de fato, via `/api/social-delete`.
 - **Remover do histórico** — tira o post da lista; o que está no ar continua no ar.
 
-### Regra do Firestore
+### Regra do Firestore — nada a fazer
 
-A coleção é nova. Sem liberar o acesso, o post sai nas redes mas não entra no
-histórico — e aí o "Excluir da rede" fica sem os ids. Em **Firebase Console →
-Firestore Database → Regras**, acrescente o bloco abaixo **dentro** do
-`match /databases/{database}/documents` que já existe (não substitua o arquivo):
+A coleção é nova, mas **não precisa de regra nova**. As regras do projeto já
+abrem com um curinga que vale para qualquer coleção:
 
 ```
-match /socialPosts/{postId} {
-  // só o painel lê e escreve: o histórico expõe o que foi publicado e por quem
+match /{document=**} {
   allow read, write: if request.auth != null;
 }
 ```
 
-O painel é protegido por login do Firebase Auth, então `request.auth != null`
-equivale a "quem tem acesso ao painel". Quem só visita o site não precisa ler
-esta coleção — por isso ela não é pública, ao contrário de `articles`.
+Como o painel exige login do Firebase Auth, quem está logado nele já lê e
+escreve em `socialPosts`. As regras específicas que vêm depois (`articles`,
+`banners`, `enquetes`…) existem para liberar o **público não logado** a ler o
+conteúdo do site — e o histórico fica de fora delas de propósito: ele mostra o
+que foi publicado, por quem e os ids internos das publicações na Meta.
+
+Se um dia esse curinga for removido — trocado por regras coleção a coleção —,
+aí sim o histórico para de gravar, em silêncio: o post sai nas redes e não entra
+na lista, e o "Excluir da rede" fica sem os ids. Nesse caso, o bloco a
+acrescentar é:
+
+```
+match /socialPosts/{postId} {
+  allow read, write: if request.auth != null;
+}
+```
+
+> **Atenção ao banco.** O projeto `site-atibaiatv` tem dois bancos de dados:
+> `(default)` (edição Padrão) e `default` (Enterprise). O site chama
+> `getFirestore(app)` sem nomear banco, o que usa sempre o **`(default)`** —
+> é nele que as regras valem. Publicar no Enterprise não tem efeito no painel.
 
 ## Limites da plataforma (não são limitações da ferramenta)
 
