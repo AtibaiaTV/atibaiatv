@@ -112,13 +112,21 @@ export default function SocialPostsHistory({ recarregar }) {
             display: 'flex', gap: 12, alignItems: 'flex-start', background: '#fff',
             border: '1px solid #e5e7eb', borderRadius: 12, padding: '0.85rem 1rem',
           }}>
-            {post.imageUrls?.[0] && (
+            {post.videoUrl ? (
+              <video src={post.videoUrl} muted preload="metadata"
+                style={{ width: 54, height: 68, objectFit: 'cover', borderRadius: 8, flexShrink: 0, background: '#000' }} />
+            ) : post.imageUrls?.[0] && (
               <img src={post.imageUrls[0]} alt="" style={{ width: 54, height: 68, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
             )}
 
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '0.86rem', fontWeight: 600, color: '#1a1a2e' }}>{post.title || 'Sem título'}</span>
+                {post.videoUrl && (
+                  <span style={{ fontSize: '0.68rem', color: '#4971B1', background: '#eef3fa', borderRadius: 12, padding: '2px 8px' }}>
+                    🎬 Vídeo
+                  </span>
+                )}
                 {post.imageUrls?.length > 1 && (
                   <span style={{ fontSize: '0.68rem', color: '#4971B1', background: '#eef3fa', borderRadius: 12, padding: '2px 8px' }}>
                     Carrossel · {post.imageUrls.length}

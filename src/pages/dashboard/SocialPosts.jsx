@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { addDoc, collection, getDocs, orderBy, query, serverTimestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import { EDITORIAS } from '../../data'
@@ -24,6 +24,13 @@ const RODAPE_ALTURA = 118                                    // faixa dos perfis
 const BARRA_BAIXO_Y = H - RODAPE_ALTURA - BARRA_ALTURA       // 2a faixa, como no modelo
 const MAX_CAPTION = 2200 // limite do Instagram
 const MAX_CARROSSEL = 10 // limite de itens do carrossel no Instagram
+
+/* video: o Reels do Instagram aceita de 3 segundos a 15 minutos, mas aqui o
+   limite e de 5 minutos, combinado para o post de rede social nao virar
+   programa inteiro. O teto de tamanho segura o envio pelo navegador */
+const MAX_VIDEO_S = 300
+const MIN_VIDEO_S = 3
+const MAX_VIDEO_MB = 300
 
 /* quanto de legenda cada rede mostra antes do "ver mais" */
 const REDES = {
@@ -230,6 +237,23 @@ function buildCaption(article) {
   return cabeca + '\n\n' + body + pe
 }
 
+function formatarDuracao(segundos) {
+  const s = Math.round(segundos || 0)
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')
+}
+
+/* le a duracao no proprio navegador, antes de enviar: descobrir o limite so
+   depois de subir 200 MB seria cruel com quem esta publicando */
+function lerDuracaoVideo(url) {
+  return new Promise((resolve, reject) => {
+    const v = document.createElement('video')
+    v.preload = 'metadata'
+    v.onloadedmetadata = () => resolve(v.duration)
+    v.onerror = () => reject(new Error('o navegador não conseguiu ler este arquivo de vídeo'))
+    v.src = url
+  })
+}
+
 /* pinta as hashtags de azul, como as redes fazem */
 function textoComTags(texto) {
   return texto.split(/(\s+)/).map((pedaco, i) =>
@@ -241,7 +265,7 @@ function textoComTags(texto) {
 
 /* simula o card do feed para a pessoa ver onde a legenda corta e como a foto
    fica enquadrada, antes de publicar de verdade */
-function PostPreview({ rede, holderRef, caption, scheduleAt }) {
+function PostPreview({ rede, holderRef, caption, scheduleAt, videoUrl }) {
   const cfg = REDES[rede]
   const cortou = caption.length > cfg.corte
   const visivel = cortou ? caption.slice(0, cfg.corte).replace(/\s+\S*$/, '') : caption
@@ -258,7 +282,17 @@ function PostPreview({ rede, holderRef, caption, scheduleAt }) {
         </div>
       </div>
 
-      <div ref={holderRef} style={{ width: '100%', aspectRatio: '4/5', background: '#f3f4f6' }} />
+      {/* o video substitui a arte: ele vai inteiro para a rede, sem passar pelo canvas */}
+      {videoUrl ? (
+        <video
+          src={videoUrl}
+          controls
+          playsInline
+          style={{ width: '100%', aspectRatio: '4/5', background: '#000', objectFit: 'contain', display: 'block' }}
+        />
+      ) : (
+        <div ref={holderRef} style={{ width: '100%', aspectRatio: '4/5', background: '#f3f4f6' }} />
+      )}
 
       <div style={{ padding: '10px 12px 14px' }}>
         <div style={{ fontSize: '1.05rem', letterSpacing: 6, color: '#262626', marginBottom: 8 }}>♡ ♬ ↗</div>
@@ -291,6 +325,10 @@ export default function SocialPosts() {
      enviadas aqui e passam pela mesma arte, para o carrossel ficar uniforme */
   const [extras, setExtras] = useState([])
   const [slideAtivo, setSlideAtivo] = useState(0)
+  /* video em MP4: quando existe, o post sai como video (Reels no Instagram) e a
+     arte das fotos fica de fora — as redes nao misturam os dois num post so */
+  const [video, setVideo] = useState(null)
+  const [envioPct, setEnvioPct] = useState(null)
   const [recarregarHistorico, setRecarregarHistorico] = useState(0)
   const canvasRef = useRef(null)
   const holderRef = useRef(null)
@@ -348,6 +386,7 @@ export default function SocialPosts() {
     setStatus(null)
     setExtras([])
     setSlideAtivo(0)
+    descartarVideo()
     setRendering(true)
     await renderArt(a, enquadramento, zerado)
     setRendering(false)
@@ -395,6 +434,61 @@ export default function SocialPosts() {
     setExtras(restantes)
     setSlideAtivo(0)
     if (selected) await renderArt(selected, enquadramento, ajuste)
+  }
+
+  /* solta o objectURL junto com o vídeo: sem isso o arquivo (que pode ter
+     centenas de MB) continua preso na memória da aba */
+  const descartarVideo = () => {
+    setVideo(atual => {
+      if (atual) URL.revokeObjectURL(atual.url)
+      return null
+    })
+    setEnvioPct(null)
+  }
+
+  const escolherVideo = async (event) => {
+    const arquivo = (event.target.files || [])[0]
+    event.target.value = ''
+    if (!arquivo) return
+
+    if (arquivo.type !== 'video/mp4' && !/\.mp4$/i.test(arquivo.name)) {
+      setStatus({ ok: false, msg: 'O vídeo precisa ser MP4 (H.264 com áudio AAC) — é o formato que a Meta aceita.' })
+      return
+    }
+    if (arquivo.size > MAX_VIDEO_MB * 1024 * 1024) {
+      setStatus({ ok: false, msg: 'O arquivo tem ' + Math.round(arquivo.size / 1048576) + ' MB e o limite é ' + MAX_VIDEO_MB + ' MB.' })
+      return
+    }
+
+    const url = URL.createObjectURL(arquivo)
+    let duracao
+    try {
+      duracao = await lerDuracaoVideo(url)
+    } catch (e) {
+      URL.revokeObjectURL(url)
+      setStatus({ ok: false, msg: e.message })
+      return
+    }
+    /* meio segundo de folga: o metadado do MP4 costuma arredondar para cima e um
+       vídeo de 5:00 cravados seria recusado por 4 centésimos */
+    if (duracao > MAX_VIDEO_S + 0.5) {
+      URL.revokeObjectURL(url)
+      setStatus({ ok: false, msg: 'O vídeo tem ' + formatarDuracao(duracao) + ' e o limite é 5:00. Corte antes de enviar.' })
+      return
+    }
+    if (duracao < MIN_VIDEO_S) {
+      URL.revokeObjectURL(url)
+      setStatus({ ok: false, msg: 'O Instagram não aceita vídeo com menos de ' + MIN_VIDEO_S + ' segundos.' })
+      return
+    }
+
+    descartarVideo()
+    setVideo({ arquivo, url, nome: arquivo.name, duracao, tamanho: arquivo.size })
+    setSlideAtivo(0)
+    setStatus({
+      ok: true,
+      msg: 'Vídeo de ' + formatarDuracao(duracao) + ' pronto. O post sai como vídeo — as fotos do carrossel ficam de fora.',
+    })
   }
 
   const trocarEnquadramento = async (modo) => {
@@ -481,6 +575,25 @@ export default function SocialPosts() {
     return urls
   }
 
+  /* o vídeo vai para o Storage e a Meta busca de lá pela URL — mandar o arquivo
+     direto para a Graph API pelo navegador esbarraria no token, que só existe no
+     servidor. Envio resumível porque um MP4 grande não sobe numa tacada só */
+  const enviarVideo = async () => {
+    const caminho = 'social/videos/' + selected.id + '-' + Date.now() + '.mp4'
+    const tarefa = uploadBytesResumable(ref(storage, caminho), video.arquivo, { contentType: 'video/mp4' })
+    setEnvioPct(0)
+    await new Promise((resolve, reject) => {
+      tarefa.on(
+        'state_changed',
+        s => setEnvioPct(Math.round((s.bytesTransferred / s.totalBytes) * 100)),
+        reject,
+        resolve,
+      )
+    })
+    setEnvioPct(null)
+    return await getDownloadURL(tarefa.snapshot.ref)
+  }
+
   const publish = async () => {
     if (!targets.facebook && !targets.instagram) {
       setStatus({ ok: false, msg: 'Escolha ao menos uma rede.' })
@@ -489,13 +602,14 @@ export default function SocialPosts() {
     setPublishing(true)
     setStatus(null)
     try {
-      const imageUrls = await enviarSlides()
+      const videoUrl = video ? await enviarVideo() : null
+      const imageUrls = video ? [] : await enviarSlides()
 
       const idToken = await user.getIdToken()
       const res = await fetch('/api/social-publish', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ idToken, imageUrls, caption, scheduleAt, targets }),
+        body: JSON.stringify({ idToken, imageUrls, videoUrl, caption, scheduleAt, targets }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'erro inesperado')
@@ -507,6 +621,7 @@ export default function SocialPosts() {
         title: selected.title || '',
         caption,
         imageUrls,
+        videoUrl,
         published: data.published || [],
         errors: data.errors || [],
         scheduleAt: scheduleAt || null,
@@ -521,6 +636,7 @@ export default function SocialPosts() {
       setRecarregarHistorico(n => n + 1)
     } catch (e) {
       console.error(e)
+      setEnvioPct(null)
       setStatus({ ok: false, msg: 'Erro ao publicar: ' + e.message })
     }
     setPublishing(false)
@@ -538,6 +654,7 @@ export default function SocialPosts() {
       <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1a1a2e', marginBottom: '0.35rem' }}>Redes Sociais</h1>
       <p style={{ fontSize: '0.82rem', color: '#6b7280', marginBottom: '1.5rem' }}>
         Escolha uma matéria: a arte sai no padrão da editoria e a legenda já vem com o texto da matéria.
+        Se preferir, anexe um vídeo MP4 de até 5 minutos no lugar da arte.
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 350px) 1fr', gap: '1.5rem', alignItems: 'start' }}>
@@ -579,9 +696,43 @@ export default function SocialPosts() {
                 </div>
 
                 <div style={{ opacity: rendering ? 0.5 : 1 }}>
-                  <PostPreview rede={redePreview} holderRef={holderRef} caption={caption} scheduleAt={scheduleAt} />
+                  <PostPreview rede={redePreview} holderRef={holderRef} caption={caption} scheduleAt={scheduleAt} videoUrl={video?.url} />
                 </div>
 
+                {/* vídeo em MP4: entra no lugar da arte, com Reels no Instagram */}
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#6b7280' }}>Vídeo (MP4, até 5:00)</div>
+                    <label style={{ ...btn('#fff', '#374151', '1px solid #e5e7eb'), padding: '6px 12px', fontSize: '0.72rem' }}>
+                      {video ? 'Trocar vídeo' : '🎬 Escolher vídeo'}
+                      <input type="file" accept="video/mp4" onChange={escolherVideo} style={{ display: 'none' }} />
+                    </label>
+                  </div>
+
+                  {video ? (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc',
+                      border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 10px',
+                    }}>
+                      <div style={{ flex: 1, minWidth: 0, fontSize: '0.72rem', color: '#374151' }}>
+                        <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{video.nome}</div>
+                        <div style={{ color: '#9ca3af' }}>
+                          {formatarDuracao(video.duracao)} · {Math.max(1, Math.round(video.tamanho / 1048576))} MB
+                        </div>
+                      </div>
+                      <button onClick={descartarVideo} title="Remover o vídeo" style={btn('#fff', '#Cd0000', '1px solid #f3d0d0')}>×</button>
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: '0.68rem', color: '#9ca3af', lineHeight: 1.45 }}>
+                      Com vídeo o post sai como <b>Reels</b> no Instagram e como vídeo no feed do Facebook.
+                      O vídeo substitui a arte e o carrossel — as redes não misturam os dois no mesmo post.
+                      Prefira vertical (9:16); até {MAX_VIDEO_MB} MB.
+                    </p>
+                  )}
+                </div>
+
+                {!video && (
+                <>
                 <div style={{ marginTop: 12 }}>
                   <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#6b7280', marginBottom: 6 }}>Enquadramento da foto</div>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -671,12 +822,14 @@ export default function SocialPosts() {
                     e o post sai como carrossel nas duas redes.
                   </p>
                 </div>
+                </>
+                )}
 
                 <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                  <button onClick={download} style={btn('#fff', '#374151', '1px solid #e5e7eb')}>⬇️ Baixar arte</button>
+                  {!video && <button onClick={download} style={btn('#fff', '#374151', '1px solid #e5e7eb')}>⬇️ Baixar arte</button>}
                   <button onClick={copyCaption} style={btn('#fff', '#374151', '1px solid #e5e7eb')}>📋 Copiar legenda</button>
                 </div>
-                {warnings.map((w, i) => (
+                {!video && warnings.map((w, i) => (
                   <p key={i} style={{ fontSize: '0.72rem', color: '#c47a00', marginTop: 8, lineHeight: 1.5 }}>⚠️ {w}</p>
                 ))}
               </div>
@@ -704,8 +857,17 @@ export default function SocialPosts() {
                   padding: '12px 26px', fontSize: '0.9rem',
                   cursor: publishing ? 'not-allowed' : 'pointer',
                 }}>
-                  {publishing ? 'Enviando...' : scheduleAt ? '🚀 Agendar e publicar' : '🚀 Publicar agora'}
+                  {envioPct !== null ? 'Enviando o vídeo... ' + envioPct + '%'
+                    : publishing ? 'Enviando...'
+                    : scheduleAt ? '🚀 Agendar e publicar' : '🚀 Publicar agora'}
                 </button>
+
+                {/* o vídeo passa pelo processamento da Meta, que não é instantâneo */}
+                {video && publishing && envioPct === null && (
+                  <p style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 8, lineHeight: 1.5 }}>
+                    O vídeo já subiu; agora a Meta está processando. Pode levar alguns minutos — não feche esta tela.
+                  </p>
+                )}
 
                 {status && (
                   <p style={{

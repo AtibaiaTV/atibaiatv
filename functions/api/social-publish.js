@@ -13,9 +13,16 @@
 */
 
 const GRAPH = 'https://graph.facebook.com/v26.0'
+/* a Meta pede o host de video para o endpoint /videos, mesmo quando o arquivo
+   vai por file_url em vez de upload direto */
+const GRAPH_VIDEO = 'https://graph-video.facebook.com/v26.0'
 const FB_MIN_SCHEDULE_S = 10 * 60          // a Meta exige no minimo 10 minutos
 const FB_MAX_SCHEDULE_S = 75 * 24 * 3600   // e no maximo 75 dias
 const MAX_CARROSSEL = 10                   // limite de itens do carrossel no Instagram
+/* o container de foto fica pronto em segundos; o de video passa por
+   transcodificacao e precisa de bem mais paciencia */
+const ESPERA_FOTO = 8
+const ESPERA_VIDEO = 60
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -46,8 +53,8 @@ async function authorize(idToken, env) {
   return { ok: true, email }
 }
 
-async function graph(path, params) {
-  const res = await fetch(GRAPH + path, { method: 'POST', body: new URLSearchParams(params) })
+async function graph(path, params, base = GRAPH) {
+  const res = await fetch(base + path, { method: 'POST', body: new URLSearchParams(params) })
   const data = await res.json()
   if (data.error) throw new Error(data.error.error_user_msg || data.error.message)
   return data
@@ -85,6 +92,32 @@ async function publishFacebookPost(pageId, token, urls, caption, agendamento) {
   return post.id
 }
 
+/* Video no feed da pagina. Aqui o /videos serve direto: ele ja cria uma
+   publicacao de video no feed, sem o rodeio que a foto exige. */
+async function publishFacebookVideo(pageId, token, videoUrl, caption, agendamento) {
+  const params = { file_url: videoUrl, description: caption, access_token: token }
+  if (agendamento) {
+    params.published = 'false'
+    params.scheduled_publish_time = String(agendamento)
+  }
+  const post = await graph('/' + pageId + '/videos', params, GRAPH_VIDEO)
+  return post.id
+}
+
+/* No Instagram o video entra como REELS — desde a v21 e o unico tipo aceito para
+   video pela API; VIDEO foi descontinuado e o proprio Reels aparece no feed. */
+async function publishInstagramReel(igUserId, token, videoUrl, caption) {
+  const container = await graph('/' + igUserId + '/media', {
+    media_type: 'REELS', video_url: videoUrl, caption, share_to_feed: 'true', access_token: token,
+  })
+  await waitForContainer(container.id, token, ESPERA_VIDEO)
+
+  const publicado = await graph('/' + igUserId + '/media_publish', {
+    creation_id: container.id, access_token: token,
+  })
+  return publicado.id
+}
+
 /* No Instagram cada foto vira um container filho e todos entram num container
    do tipo CAROUSEL, que é o que de fato é publicado */
 async function publishInstagramCarousel(igUserId, token, urls, caption) {
@@ -120,15 +153,16 @@ async function instagramPermalink(mediaId, token) {
 
 /* o container do Instagram costuma ficar pronto na hora, mas a Meta recomenda
    conferir o status antes de publicar */
-async function waitForContainer(id, token) {
-  for (let i = 0; i < 8; i++) {
+async function waitForContainer(id, token, tentativas = ESPERA_FOTO) {
+  const midia = tentativas === ESPERA_VIDEO ? 'o vídeo' : 'a imagem'
+  for (let i = 0; i < tentativas; i++) {
     const res = await fetch(GRAPH + '/' + id + '?fields=status_code&access_token=' + encodeURIComponent(token))
     const data = await res.json()
     if (data.status_code === 'FINISHED') return
-    if (data.status_code === 'ERROR') throw new Error('O Instagram recusou a imagem.')
+    if (data.status_code === 'ERROR') throw new Error('O Instagram recusou ' + midia + '.')
     await new Promise(r => setTimeout(r, 2000))
   }
-  throw new Error('O Instagram demorou demais para processar a imagem.')
+  throw new Error('O Instagram demorou demais para processar ' + midia + '.')
 }
 
 export async function onRequestPost(context) {
@@ -154,11 +188,22 @@ export async function onRequestPost(context) {
   }
 
   /* imageUrls e a forma nova (carrossel); imageUrl continua aceito para nao
-     quebrar quem chamar a funcao do jeito antigo */
-  const { imageUrl, caption, scheduleAt, targets } = body
+     quebrar quem chamar a funcao do jeito antigo. videoUrl, quando vem, manda
+     no post inteiro: as redes nao aceitam foto e video na mesma publicacao */
+  const { imageUrl, videoUrl, caption, scheduleAt, targets } = body
   const urls = Array.isArray(body.imageUrls) && body.imageUrls.length ? body.imageUrls : imageUrl ? [imageUrl] : []
-  if (!urls.length || !caption) return json({ error: 'imageUrl(s) e caption sao obrigatorios' }, 400)
-  if (urls.length > MAX_CARROSSEL) {
+  const ehVideo = Boolean(videoUrl)
+
+  if (!caption) return json({ error: 'caption e obrigatoria' }, 400)
+  if (ehVideo) {
+    /* a Meta busca o arquivo por conta dela: sem https publico o download falha
+       do lado dela, com um erro que nao explica nada */
+    if (!/^https:\/\//i.test(String(videoUrl))) {
+      return json({ error: 'videoUrl precisa ser uma URL https publica.' }, 400)
+    }
+  } else if (!urls.length) {
+    return json({ error: 'imageUrl(s) ou videoUrl sao obrigatorios' }, 400)
+  } else if (urls.length > MAX_CARROSSEL) {
     return json({ error: 'O carrossel aceita no maximo ' + MAX_CARROSSEL + ' fotos.' }, 400)
   }
   const ehCarrossel = urls.length > 1
@@ -190,13 +235,19 @@ export async function onRequestPost(context) {
         agendamento = when
       }
 
-      const postId = await publishFacebookPost(pageId, token, urls, caption, agendamento)
+      const postId = ehVideo
+        ? await publishFacebookVideo(pageId, token, videoUrl, caption, agendamento)
+        : await publishFacebookPost(pageId, token, urls, caption, agendamento)
 
       results.push(scheduleAt ? 'Facebook: agendado' : 'Facebook: publicado')
       published.push({
         network: 'facebook',
         id: postId,
-        permalink: 'https://www.facebook.com/' + postId,
+        /* o id do video nao abre sozinho na barra de endereco como o do post;
+           precisa vir com a pagina na frente */
+        permalink: ehVideo
+          ? 'https://www.facebook.com/' + pageId + '/videos/' + postId
+          : 'https://www.facebook.com/' + postId,
         scheduled: Boolean(scheduleAt),
       })
     } catch (e) {
@@ -207,7 +258,9 @@ export async function onRequestPost(context) {
   if (wantInstagram) {
     try {
       let mediaId
-      if (ehCarrossel) {
+      if (ehVideo) {
+        mediaId = await publishInstagramReel(igUserId, token, videoUrl, caption)
+      } else if (ehCarrossel) {
         mediaId = await publishInstagramCarousel(igUserId, token, urls, caption)
       } else {
         const media = await graph('/' + igUserId + '/media', { image_url: urls[0], caption, access_token: token })
@@ -216,7 +269,7 @@ export async function onRequestPost(context) {
         mediaId = publicado.id
       }
 
-      results.push('Instagram: publicado')
+      results.push(ehVideo ? 'Instagram: Reels publicado' : 'Instagram: publicado')
       published.push({
         network: 'instagram',
         id: mediaId,

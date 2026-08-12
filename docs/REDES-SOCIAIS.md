@@ -114,6 +114,42 @@ do seu jeito, e a função cuida disso:
 - **Instagram** — cada foto vira um container filho (`is_carousel_item`) e todos
   entram num container `media_type=CAROUSEL`, que é o publicado.
 
+## Vídeo (MP4)
+
+Em **Vídeo (MP4, até 5:00)**, no painel, dá para anexar um arquivo no lugar da
+arte. O vídeo **substitui a arte e o carrossel**: as redes não aceitam foto e
+vídeo na mesma publicação, então os controles de enquadramento e de carrossel
+somem enquanto houver vídeo anexado. A legenda continua a mesma.
+
+O painel confere no navegador, **antes de enviar**, três coisas — descobrir o
+problema depois de subir 200 MB seria cruel com quem está publicando:
+
+| Regra | Valor | De onde vem |
+|---|---|---|
+| Formato | MP4 (H.264 + AAC) | é o que a Meta aceita |
+| Duração | de 3 segundos a **5:00** | o mínimo é do Reels; os 5 minutos são a regra da casa (o Reels aceitaria até 15) |
+| Tamanho | até 300 MB | limite prático do envio pelo navegador |
+
+O arquivo vai para o Firebase Storage (`social/videos/…`) em envio **resumível**,
+com porcentagem no botão, e a Meta busca o vídeo por essa URL. Mandar o arquivo
+direto para a Graph API pelo navegador não daria: o token só existe no servidor.
+
+- **Facebook** — `POST /{page-id}/videos` com `file_url`, no host
+  `graph-video.facebook.com`. Aqui o endpoint já cria a publicação no feed,
+  sem o rodeio que a foto exige. **Aceita agendamento**, igual à foto.
+- **Instagram** — container `media_type=REELS` com `video_url`, e depois
+  `media_publish`. Desde a v21 o `VIDEO` foi descontinuado: todo vídeo enviado
+  pela API vira **Reels** — e aparece no feed, com `share_to_feed`.
+
+O container de vídeo passa por transcodificação e demora bem mais que o de foto:
+a espera vai a **2 minutos** (60 tentativas de 2s) contra 16 segundos da imagem.
+Enquanto isso o painel avisa que a Meta está processando. Prefira vídeo
+**vertical (9:16)** — é o formato do Reels.
+
+O histórico marca o post com a etiqueta **🎬 Vídeo** e guarda a `videoUrl`.
+Excluir da rede funciona igual: o Facebook apaga pelo id do vídeo, o Instagram
+continua sem endpoint de exclusão.
+
 ## Histórico e exclusão
 
 Cada publicação vira um documento na coleção **`socialPosts`** do Firestore, com
@@ -166,6 +202,8 @@ match /socialPosts/{postId} {
 - **Agendamento**: existe só no Facebook, entre 10 minutos e 75 dias de antecedência.
   A API do Instagram não agenda — publica na hora. Para agendar no Instagram só
   pelo Meta Business Suite, à mão.
+- **Vídeo no Instagram**: sai sempre como **Reels** — a API não publica vídeo de
+  outro jeito. E o Reels não agenda: agendamento de vídeo só no Facebook.
 - **Legenda**: até 2.200 caracteres no Instagram; a ferramenta corta o texto da
   matéria antes desse limite e sempre preserva o rodapé com o link e as hashtags.
 - **Token**: expira em ~60 dias e precisa ser renovado. Quando expirar, a ferramenta
