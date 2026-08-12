@@ -19,12 +19,9 @@ const GRAPH_VIDEO = 'https://graph-video.facebook.com/v26.0'
 const FB_MIN_SCHEDULE_S = 10 * 60          // a Meta exige no minimo 10 minutos
 const FB_MAX_SCHEDULE_S = 75 * 24 * 3600   // e no maximo 75 dias
 const MAX_CARROSSEL = 10                   // limite de itens do carrossel no Instagram
-/* tentativas de 2 segundos: a foto fica pronta em segundos, o video passa por
-   transcodificacao. Sao 5 minutos de espera porque um MP4 no limite de duracao
-   demora mesmo — desistir antes deixaria o post no Facebook no ar e o do
-   Instagram de fora, com as redes desencontradas */
+/* tentativas de 2 segundos para o container de foto ficar pronto. O video nao
+   tem constante aqui de proposito: quem espera por ele e o navegador */
 const ESPERA_FOTO = 8
-const ESPERA_VIDEO = 150
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -107,17 +104,17 @@ async function publishFacebookVideo(pageId, token, videoUrl, caption, agendament
 }
 
 /* No Instagram o video entra como REELS — desde a v21 e o unico tipo aceito para
-   video pela API; VIDEO foi descontinuado e o proprio Reels aparece no feed. */
-async function publishInstagramReel(igUserId, token, videoUrl, caption) {
+   video pela API; VIDEO foi descontinuado e o proprio Reels aparece no feed.
+
+   Aqui so criamos o container e devolvemos o id: quem espera a
+   transcodificacao terminar e o navegador, perguntando de tempos em tempos no
+   passo 'ig-status'. Esperar aqui dentro foi o que quebrou a primeira versao —
+   cada pergunta e uma sub-requisicao, e o Worker do Cloudflare corta em 50. */
+async function criarContainerReel(igUserId, token, videoUrl, caption) {
   const container = await graph('/' + igUserId + '/media', {
     media_type: 'REELS', video_url: videoUrl, caption, share_to_feed: 'true', access_token: token,
   })
-  await waitForContainer(container.id, token, ESPERA_VIDEO)
-
-  const publicado = await graph('/' + igUserId + '/media_publish', {
-    creation_id: container.id, access_token: token,
-  })
-  return publicado.id
+  return container.id
 }
 
 /* No Instagram cada foto vira um container filho e todos entram num container
@@ -154,17 +151,69 @@ async function instagramPermalink(mediaId, token) {
 }
 
 /* o container do Instagram costuma ficar pronto na hora, mas a Meta recomenda
-   conferir o status antes de publicar */
+   conferir o status antes de publicar. Vale para foto: o video passa longe
+   dessas oito tentativas e por isso espera do lado do navegador */
 async function waitForContainer(id, token, tentativas = ESPERA_FOTO) {
-  const midia = tentativas === ESPERA_VIDEO ? 'o vídeo' : 'a imagem'
   for (let i = 0; i < tentativas; i++) {
     const res = await fetch(GRAPH + '/' + id + '?fields=status_code&access_token=' + encodeURIComponent(token))
     const data = await res.json()
     if (data.status_code === 'FINISHED') return
-    if (data.status_code === 'ERROR') throw new Error('O Instagram recusou ' + midia + '.')
+    if (data.status_code === 'ERROR') throw new Error('O Instagram recusou a imagem.')
     await new Promise(r => setTimeout(r, 2000))
   }
-  throw new Error('O Instagram demorou demais para processar ' + midia + '.')
+  throw new Error('O Instagram demorou demais para processar a imagem.')
+}
+
+/* calcula (e critica) o horario do agendamento, que so o Facebook aceita */
+function horarioAgendado(scheduleAt) {
+  if (!scheduleAt) return null
+  const when = Math.floor(new Date(scheduleAt).getTime() / 1000)
+  if (isNaN(when)) throw new Error('Data de agendamento invalida.')
+  const delta = when - Math.floor(Date.now() / 1000)
+  if (delta < FB_MIN_SCHEDULE_S) throw new Error('O Facebook exige agendar com pelo menos 10 minutos de antecedencia.')
+  if (delta > FB_MAX_SCHEDULE_S) throw new Error('O Facebook aceita agendamento de no maximo 75 dias.')
+  return when
+}
+
+/* Passos do video, chamados em sequencia pelo navegador.
+
+   Cada um faz pouquissimas chamadas a Meta e responde na hora. A versao
+   anterior fazia tudo numa requisicao so, ficava perguntando o status do
+   container e morria no meio: o Cloudflare corta o Worker em 50
+   sub-requisicoes, o que dava cerca de um minuto e meio de espera. O erro
+   chegava na tela como pagina HTML, sem explicacao nenhuma. */
+async function passoVideo(step, body, env) {
+  const token = env.META_ACCESS_TOKEN
+  const igUserId = env.META_IG_USER_ID
+
+  if (step === 'ig-status') {
+    if (!body.containerId) return json({ error: 'containerId obrigatorio' }, 400)
+    const data = await graphGet('/' + body.containerId, { fields: 'status_code,status', access_token: token })
+    return json({ status_code: data.status_code, status: data.status || null })
+  }
+
+  if (step === 'ig-finish') {
+    if (!body.containerId) return json({ error: 'containerId obrigatorio' }, 400)
+    try {
+      const publicado = await graph('/' + igUserId + '/media_publish', {
+        creation_id: body.containerId, access_token: token,
+      })
+      return json({
+        results: ['Instagram: Reels publicado'],
+        errors: [],
+        published: [{
+          network: 'instagram',
+          id: publicado.id,
+          permalink: await instagramPermalink(publicado.id, token),
+          scheduled: false,
+        }],
+      })
+    } catch (e) {
+      return json({ results: [], errors: ['Instagram: ' + e.message], published: [] })
+    }
+  }
+
+  return json({ error: 'passo desconhecido: ' + step }, 400)
 }
 
 export async function onRequestPost(context) {
@@ -189,20 +238,27 @@ export async function onRequestPost(context) {
     return json({ error: 'Configuracao da Meta ausente: defina META_ACCESS_TOKEN e META_PAGE_ID no Cloudflare.' }, 500)
   }
 
+  /* passos curtos do video, chamados um a um pelo navegador */
+  if (body.step) return await passoVideo(body.step, body, env)
+
   /* imageUrls e a forma nova (carrossel); imageUrl continua aceito para nao
      quebrar quem chamar a funcao do jeito antigo. videoUrl, quando vem, manda
-     no post inteiro: as redes nao aceitam foto e video na mesma publicacao */
+     no post inteiro: as redes nao aceitam foto e video na mesma publicacao.
+
+     O Instagram recebe a versao 9:16 (videoUrlInstagram) e o Facebook fica com
+     o arquivo original — cada rede tem o seu formato, e mandar o mesmo arquivo
+     para as duas deixaria tarja preta em algum lugar */
   const { imageUrl, videoUrl, caption, scheduleAt, targets } = body
+  const videoUrlInstagram = body.videoUrlInstagram || videoUrl
   const urls = Array.isArray(body.imageUrls) && body.imageUrls.length ? body.imageUrls : imageUrl ? [imageUrl] : []
-  const ehVideo = Boolean(videoUrl)
+  const ehVideo = Boolean(videoUrl || videoUrlInstagram)
 
   if (!caption) return json({ error: 'caption e obrigatoria' }, 400)
   if (ehVideo) {
     /* a Meta busca o arquivo por conta dela: sem https publico o download falha
        do lado dela, com um erro que nao explica nada */
-    if (!/^https:\/\//i.test(String(videoUrl))) {
-      return json({ error: 'videoUrl precisa ser uma URL https publica.' }, 400)
-    }
+    const invalida = [videoUrl, videoUrlInstagram].filter(Boolean).some(u => !/^https:\/\//i.test(String(u)))
+    if (invalida) return json({ error: 'as URLs de video precisam ser https publicas.' }, 400)
   } else if (!urls.length) {
     return json({ error: 'imageUrl(s) ou videoUrl sao obrigatorios' }, 400)
   } else if (urls.length > MAX_CARROSSEL) {
@@ -227,15 +283,7 @@ export async function onRequestPost(context) {
 
   if (wantFacebook) {
     try {
-      let agendamento = null
-      if (scheduleAt) {
-        const when = Math.floor(new Date(scheduleAt).getTime() / 1000)
-        if (isNaN(when)) throw new Error('Data de agendamento invalida.')
-        const delta = when - Math.floor(Date.now() / 1000)
-        if (delta < FB_MIN_SCHEDULE_S) throw new Error('O Facebook exige agendar com pelo menos 10 minutos de antecedencia.')
-        if (delta > FB_MAX_SCHEDULE_S) throw new Error('O Facebook aceita agendamento de no maximo 75 dias.')
-        agendamento = when
-      }
+      const agendamento = horarioAgendado(scheduleAt)
 
       const postId = ehVideo
         ? await publishFacebookVideo(pageId, token, videoUrl, caption, agendamento)
@@ -257,12 +305,21 @@ export async function onRequestPost(context) {
     }
   }
 
-  if (wantInstagram) {
+  /* o video para aqui: devolve o container e o navegador acompanha o resto */
+  let igContainerId = null
+  if (wantInstagram && ehVideo) {
+    try {
+      igContainerId = await criarContainerReel(igUserId, token, videoUrlInstagram, caption)
+      results.push('Instagram: vídeo enviado, processando')
+    } catch (e) {
+      errors.push('Instagram: ' + e.message)
+    }
+  }
+
+  if (wantInstagram && !ehVideo) {
     try {
       let mediaId
-      if (ehVideo) {
-        mediaId = await publishInstagramReel(igUserId, token, videoUrl, caption)
-      } else if (ehCarrossel) {
+      if (ehCarrossel) {
         mediaId = await publishInstagramCarousel(igUserId, token, urls, caption)
       } else {
         const media = await graph('/' + igUserId + '/media', { image_url: urls[0], caption, access_token: token })
@@ -271,7 +328,7 @@ export async function onRequestPost(context) {
         mediaId = publicado.id
       }
 
-      results.push(ehVideo ? 'Instagram: Reels publicado' : 'Instagram: publicado')
+      results.push('Instagram: publicado')
       published.push({
         network: 'instagram',
         id: mediaId,
@@ -284,5 +341,5 @@ export async function onRequestPost(context) {
   }
 
   if (!results.length) return json({ error: errors.join(' · ') || 'nada foi publicado' }, 502)
-  return json({ results, errors, published })
+  return json({ results, errors, published, igContainerId })
 }

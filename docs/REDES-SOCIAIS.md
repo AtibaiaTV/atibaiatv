@@ -148,14 +148,49 @@ direto para a Graph API pelo navegador não daria: o token só existe no servido
   `media_publish`. Desde a v21 o `VIDEO` foi descontinuado: todo vídeo enviado
   pela API vira **Reels** — e aparece no feed, com `share_to_feed`.
 
-O container de vídeo passa por transcodificação e demora bem mais que o de foto:
-a espera vai a **5 minutos** (150 tentativas de 2s) contra 16 segundos da imagem.
-O prazo é largo de propósito — um MP4 no limite de duração demora mesmo, e
-desistir cedo deixaria o post do Facebook no ar e o do Instagram de fora.
-Enquanto isso o painel avisa que a Meta está processando. Prefira vídeo
-**vertical (9:16)** — é o formato do Reels.
+### Cada rede no seu formato
 
-O histórico marca o post com a etiqueta **🎬 Vídeo** e guarda a `videoUrl`.
+O Facebook recebe o arquivo **como veio** — 16:9 é o formato natural do feed de
+lá. O Instagram recebe uma versão **9:16 (1080×1920)**, ampliada e centralizada
+até preencher a tela: um 16:9 mandado cru para o Reels entra com tarja preta em
+cima e embaixo.
+
+O recorte mora em `src/utils/recorteVideo.js` e roda **no navegador**: o vídeo
+toca num `<video>`, cada quadro é desenhado recortado num `<canvas>` e o
+`MediaRecorder` grava a saída em MP4/H.264, com o áudio puxado pelo WebAudio (sem
+passar pelas caixas de som, senão a redação inteira ouviria o vídeo). Daí:
+
+- **Leva o tempo do vídeo.** É gravação em tempo real: 5 minutos de vídeo, 5
+  minutos de processamento, com a porcentagem no botão.
+- **Trocar de aba pausa** a gravação e o vídeo juntos, e tudo continua quando a
+  aba volta. Sem esse cuidado o recorte sairia com a imagem congelada — o
+  navegador para de desenhar em abas de segundo plano.
+- **Precisa de Chrome atualizado.** Se o navegador não gravar MP4, o painel
+  avisa, pula o recorte e manda o original também para o Instagram, em vez de
+  gerar um WebM que a Meta recusaria depois.
+- **Sai menor que o original** (1080×1920 a 6 Mbps), o que ajuda no envio.
+
+### Por que quem espera é o navegador
+
+A primeira versão fazia tudo numa requisição só e ficava perguntando à Meta se o
+Reels já havia processado. Ela morria por volta de 1min30 e a tela mostrava
+`Unexpected token '<'`: o Worker do Cloudflare corta em **50 sub-requisições**, e
+cada pergunta dessas era uma. Estourado o teto, quem responde é o Cloudflare —
+com uma página de erro em HTML, que não é JSON nenhum.
+
+Aumentar a espera não resolvia: o limite é de chamadas, não de tempo. Então a
+função virou passos curtos, chamados pelo navegador:
+
+| Passo | O que faz | Chamadas à Meta |
+|---|---|---|
+| (sem `step`) | publica no Facebook e cria o container do Reels | 2 |
+| `ig-status` | pergunta se o container ficou pronto | 1 |
+| `ig-finish` | publica o Reels e busca o permalink | 2 |
+
+O painel pergunta de 5 em 5 segundos, por até 15 minutos, com o relógio no botão.
+Nenhuma requisição chega perto do limite do Cloudflare.
+
+O histórico marca o post com a etiqueta **🎬 Vídeo** e guarda as duas URLs.
 Excluir da rede funciona igual: o Facebook apaga pelo id do vídeo, o Instagram
 continua sem endpoint de exclusão.
 

@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { EDITORIAS } from '../../data'
 import DashFormField, { inputStyle } from '../../components/dashboard/DashFormField'
 import SocialPostsHistory from './SocialPostsHistory'
+import { gerarVideoVertical, suportaRecorte } from '../../utils/recorteVideo'
 
 const W = 1080
 const H = 1350 // 4:5 — formato de feed aceito no Facebook e no Instagram
@@ -284,13 +285,19 @@ function PostPreview({ rede, holderRef, caption, scheduleAt, videoUrl }) {
         </div>
       </div>
 
-      {/* o video substitui a arte: ele vai inteiro para a rede, sem passar pelo canvas */}
+      {/* o video substitui a arte: ele vai inteiro para a rede, sem passar pelo
+          canvas. Cada rede mostra o seu formato — o Instagram em 9:16 recortado,
+          que é o que o recorte vai gerar, e o Facebook no 16:9 original */}
       {videoUrl ? (
         <video
           src={videoUrl}
           controls
           playsInline
-          style={{ width: '100%', aspectRatio: '4/5', background: '#000', objectFit: 'contain', display: 'block' }}
+          style={{
+            width: '100%', background: '#000', display: 'block',
+            aspectRatio: rede === 'instagram' ? '9/16' : '16/9',
+            objectFit: rede === 'instagram' ? 'cover' : 'contain',
+          }}
         />
       ) : (
         <div ref={holderRef} style={{ width: '100%', aspectRatio: '4/5', background: '#f3f4f6' }} />
@@ -331,6 +338,8 @@ export default function SocialPosts() {
      arte das fotos fica de fora — as redes nao misturam os dois num post so */
   const [video, setVideo] = useState(null)
   const [envioPct, setEnvioPct] = useState(null)
+  const [recortePct, setRecortePct] = useState(null)
+  const [reelsEspera, setReelsEspera] = useState(null)
   const [recarregarHistorico, setRecarregarHistorico] = useState(0)
   const canvasRef = useRef(null)
   const holderRef = useRef(null)
@@ -584,13 +593,9 @@ export default function SocialPosts() {
   /* o vídeo vai para o Storage e a Meta busca de lá pela URL — mandar o arquivo
      direto para a Graph API pelo navegador esbarraria no token, que só existe no
      servidor. Envio resumível porque um MP4 grande não sobe numa tacada só */
-  const enviarVideo = async () => {
-    /* se o arquivo ja subiu numa tentativa anterior, reaproveita a URL: mandar
-       800 MB de novo por causa de um erro na publicacao seria castigo */
-    if (video.remoto) return video.remoto
-
-    const caminho = 'social/videos/' + selected.id + '-' + Date.now() + '.mp4'
-    const tarefa = uploadBytesResumable(ref(storage, caminho), video.arquivo, { contentType: 'video/mp4' })
+  const subirVideo = async (arquivo, sufixo) => {
+    const caminho = 'social/videos/' + selected.id + '-' + Date.now() + sufixo + '.mp4'
+    const tarefa = uploadBytesResumable(ref(storage, caminho), arquivo, { contentType: 'video/mp4' })
     setEnvioPct(0)
     await new Promise((resolve, reject) => {
       tarefa.on(
@@ -601,9 +606,70 @@ export default function SocialPosts() {
       )
     })
     setEnvioPct(null)
-    const url = await getDownloadURL(tarefa.snapshot.ref)
+    return await getDownloadURL(tarefa.snapshot.ref)
+  }
+
+  /* o Facebook recebe o arquivo como veio: lá o 16:9 é o formato natural do feed */
+  const enviarVideo = async () => {
+    /* se o arquivo ja subiu numa tentativa anterior, reaproveita a URL: mandar
+       800 MB de novo por causa de um erro na publicacao seria castigo */
+    if (video.remoto) return video.remoto
+    const url = await subirVideo(video.arquivo, '')
     setVideo(v => (v ? { ...v, remoto: url } : v))
     return url
+  }
+
+  /* o Instagram recebe a versão 9:16, ampliada e centralizada para preencher a
+     tela do Reels. O recorte é gravado em tempo real aqui no navegador, então
+     demora o tempo do vídeo — daí ele ser reaproveitado numa segunda tentativa */
+  const enviarVideoInstagram = async () => {
+    if (!targets.instagram) return null
+    if (video.remotoIg) return video.remotoIg
+
+    let recortado
+    try {
+      setRecortePct(0)
+      recortado = await gerarVideoVertical(video.arquivo, { aoProgresso: setRecortePct })
+    } catch (e) {
+      /* sem o recorte o post ainda sai: o Instagram recebe o original e encaixa
+         do jeito dele. Melhor avisar e publicar do que travar tudo */
+      console.error(e)
+      setRecortePct(null)
+      setWarnings(w => [...w, 'O recorte 9:16 falhou (' + e.message + '). O Instagram recebeu o vídeo original.'])
+      return null
+    }
+    setRecortePct(null)
+
+    const url = await subirVideo(recortado, '-9x16')
+    setVideo(v => (v ? { ...v, remotoIg: url } : v))
+    return url
+  }
+
+  /* o Reels leva minutos para ser transcodificado; quem espera é esta tela,
+     perguntando de 5 em 5 segundos. Fazer isso dentro da função do Cloudflare
+     estourava o limite de 50 chamadas externas por requisição */
+  const aguardarReels = async (idToken, containerId) => {
+    const inicio = Date.now()
+    const limite = 15 * 60 * 1000
+
+    while (true) {
+      await new Promise(r => setTimeout(r, 5000))
+
+      const passo = await chamarApi({ idToken, step: 'ig-status', containerId })
+      if (passo.status_code === 'FINISHED') {
+        setReelsEspera(null)
+        return await chamarApi({ idToken, step: 'ig-finish', containerId })
+      }
+      if (passo.status_code === 'ERROR') {
+        setReelsEspera(null)
+        return { results: [], published: [], errors: ['Instagram: recusou o vídeo' + (passo.status ? ' — ' + passo.status : '') + '.'] }
+      }
+      if (Date.now() - inicio > limite) {
+        setReelsEspera(null)
+        return { results: [], published: [], errors: ['Instagram: ainda processando depois de 15 minutos. Confira o app antes de publicar de novo.'] }
+      }
+      setReelsEspera(Math.round((Date.now() - inicio) / 1000))
+    }
   }
 
   /* a funcao devolve JSON, mas quando ela estoura tempo ou memoria quem responde
@@ -636,11 +702,29 @@ export default function SocialPosts() {
     setPublishing(true)
     setStatus(null)
     try {
-      const videoUrl = video ? await enviarVideo() : null
+      const idToken = await user.getIdToken()
+
+      /* o recorte vem antes do envio porque é a parte demorada; o original só
+         sobe se o Facebook estiver marcado ou se o recorte não tiver saído */
+      let videoUrl = null
+      let videoUrlInstagram = null
+      if (video) {
+        videoUrlInstagram = await enviarVideoInstagram()
+        if (targets.facebook || !videoUrlInstagram) videoUrl = await enviarVideo()
+      }
       const imageUrls = video ? [] : await enviarSlides()
 
-      const idToken = await user.getIdToken()
-      const data = await chamarApi({ idToken, imageUrls, videoUrl, caption, scheduleAt, targets })
+      const data = await chamarApi({ idToken, imageUrls, videoUrl, videoUrlInstagram, caption, scheduleAt, targets })
+
+      /* o Reels do Instagram só existe depois da transcodificação, que leva
+         minutos. Quem espera é esta tela, perguntando de 5 em 5 segundos: fazer
+         isso dentro da função estourava o limite de chamadas do Cloudflare */
+      if (data.igContainerId) {
+        const extra = await aguardarReels(idToken, data.igContainerId)
+        data.results = [...data.results.filter(r => !r.startsWith('Instagram:')), ...extra.results]
+        data.errors = [...(data.errors || []), ...extra.errors]
+        data.published = [...(data.published || []), ...extra.published]
+      }
 
       /* o histórico guarda os ids que a Meta devolveu — sem eles nao ha como
          apagar a publicacao depois */
@@ -650,6 +734,7 @@ export default function SocialPosts() {
         caption,
         imageUrls,
         videoUrl,
+        videoUrlInstagram,
         published: data.published || [],
         errors: data.errors || [],
         scheduleAt: scheduleAt || null,
@@ -665,6 +750,8 @@ export default function SocialPosts() {
     } catch (e) {
       console.error(e)
       setEnvioPct(null)
+      setRecortePct(null)
+      setReelsEspera(null)
       setStatus({ ok: false, msg: 'Erro ao publicar: ' + e.message })
     }
     setPublishing(false)
@@ -750,12 +837,23 @@ export default function SocialPosts() {
                       </div>
                       <button onClick={descartarVideo} title="Remover o vídeo" style={btn('#fff', '#Cd0000', '1px solid #f3d0d0')}>×</button>
                     </div>
-                  ) : (
+                  ) : null}
+
+                  {video && (
+                    <p style={{ fontSize: '0.68rem', color: '#9ca3af', marginTop: 5, lineHeight: 1.45 }}>
+                      O Facebook recebe o arquivo como está. O Instagram recebe uma versão <b>9:16</b>,
+                      ampliada e centralizada para preencher a tela do Reels — troque a prévia para
+                      Instagram e veja o que entra no quadro.
+                      {!suportaRecorte() && ' ⚠️ Este navegador não gera MP4: o recorte será pulado e o Instagram receberá o vídeo original.'}
+                    </p>
+                  )}
+
+                  {!video && (
                     <p style={{ fontSize: '0.68rem', color: '#9ca3af', lineHeight: 1.45 }}>
                       Com vídeo o post sai como <b>Reels</b> no Instagram e como vídeo no feed do Facebook.
                       O vídeo substitui a arte e o carrossel — as redes não misturam os dois no mesmo post.
-                      Prefira vertical (9:16); até {MAX_VIDEO_ROTULO}. Arquivo grande demora para subir —
-                      acompanhe a porcentagem no botão de publicar.
+                      Pode mandar o 16:9 da matéria: o recorte 9:16 do Instagram sai daqui mesmo.
+                      Até {MAX_VIDEO_ROTULO}.
                     </p>
                   )}
                 </div>
@@ -886,15 +984,20 @@ export default function SocialPosts() {
                   padding: '12px 26px', fontSize: '0.9rem',
                   cursor: publishing ? 'not-allowed' : 'pointer',
                 }}>
-                  {envioPct !== null ? 'Enviando o vídeo... ' + envioPct + '%'
+                  {recortePct !== null ? 'Recortando 9:16... ' + recortePct + '%'
+                    : envioPct !== null ? 'Enviando o vídeo... ' + envioPct + '%'
+                    : reelsEspera !== null ? 'Instagram processando... ' + formatarDuracao(reelsEspera)
                     : publishing ? 'Enviando...'
                     : scheduleAt ? '🚀 Agendar e publicar' : '🚀 Publicar agora'}
                 </button>
 
-                {/* o vídeo passa pelo processamento da Meta, que não é instantâneo */}
-                {video && publishing && envioPct === null && (
+                {video && publishing && (
                   <p style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 8, lineHeight: 1.5 }}>
-                    O vídeo já subiu; agora a Meta está processando. Pode levar alguns minutos — não feche esta tela.
+                    {recortePct !== null
+                      ? 'O recorte vertical é gravado em tempo real: leva o mesmo tempo que a duração do vídeo. Se você trocar de aba ele pausa e continua quando voltar.'
+                      : reelsEspera !== null
+                        ? 'O vídeo já subiu; agora é a Meta transcodificando o Reels. Pode levar alguns minutos — não feche esta tela.'
+                        : 'Não feche esta tela até terminar.'}
                   </p>
                 )}
 
