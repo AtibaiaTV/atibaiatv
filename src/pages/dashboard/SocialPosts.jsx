@@ -585,6 +585,10 @@ export default function SocialPosts() {
      direto para a Graph API pelo navegador esbarraria no token, que só existe no
      servidor. Envio resumível porque um MP4 grande não sobe numa tacada só */
   const enviarVideo = async () => {
+    /* se o arquivo ja subiu numa tentativa anterior, reaproveita a URL: mandar
+       800 MB de novo por causa de um erro na publicacao seria castigo */
+    if (video.remoto) return video.remoto
+
     const caminho = 'social/videos/' + selected.id + '-' + Date.now() + '.mp4'
     const tarefa = uploadBytesResumable(ref(storage, caminho), video.arquivo, { contentType: 'video/mp4' })
     setEnvioPct(0)
@@ -597,7 +601,31 @@ export default function SocialPosts() {
       )
     })
     setEnvioPct(null)
-    return await getDownloadURL(tarefa.snapshot.ref)
+    const url = await getDownloadURL(tarefa.snapshot.ref)
+    setVideo(v => (v ? { ...v, remoto: url } : v))
+    return url
+  }
+
+  /* a funcao devolve JSON, mas quando ela estoura tempo ou memoria quem responde
+     e o Cloudflare, com uma pagina de erro em HTML. Sem tratar isso aqui, a tela
+     mostrava "Unexpected token '<'" — que nao ajuda ninguem a entender o que
+     houve. Agora aparece o codigo e o inicio da resposta */
+  const chamarApi = async (corpo) => {
+    const res = await fetch('/api/social-publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(corpo),
+    })
+    const bruto = await res.text()
+    let data
+    try {
+      data = JSON.parse(bruto)
+    } catch {
+      const trecho = bruto.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 140)
+      throw new Error('o servidor respondeu HTTP ' + res.status + ' em vez de JSON. ' + (trecho || 'Resposta vazia.'))
+    }
+    if (!res.ok) throw new Error(data.error || 'erro inesperado (HTTP ' + res.status + ')')
+    return data
   }
 
   const publish = async () => {
@@ -612,13 +640,7 @@ export default function SocialPosts() {
       const imageUrls = video ? [] : await enviarSlides()
 
       const idToken = await user.getIdToken()
-      const res = await fetch('/api/social-publish', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ idToken, imageUrls, videoUrl, caption, scheduleAt, targets }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'erro inesperado')
+      const data = await chamarApi({ idToken, imageUrls, videoUrl, caption, scheduleAt, targets })
 
       /* o histórico guarda os ids que a Meta devolveu — sem eles nao ha como
          apagar a publicacao depois */
