@@ -128,10 +128,17 @@ problema depois de subir 200 MB seria cruel com quem está publicando:
 |---|---|---|
 | Formato | MP4 (H.264 + AAC) | é o que a Meta aceita |
 | Duração | de 3 segundos a **5:00** | o mínimo é do Reels; os 5 minutos são a regra da casa (o Reels aceitaria até 15) |
-| Tamanho | até 300 MB | limite prático do envio pelo navegador |
+| Tamanho | até **1 GB** | é o teto do próprio Instagram para Reels |
 
 O arquivo vai para o Firebase Storage (`social/videos/…`) em envio **resumível**,
-com porcentagem no botão, e a Meta busca o vídeo por essa URL. Mandar o arquivo
+com porcentagem no botão, e a Meta busca o vídeo por essa URL.
+
+> **Arquivo grande custa duas vezes.** Um MP4 de 800 MB sobe 800 MB para o
+> Storage e depois é baixado outros 800 MB pela Meta — tudo isso conta na cota
+> do Firebase. Cinco minutos em 1080p a 5 Mbps cabem em ~190 MB e ficam
+> iguaizinhos no feed, porque o Instagram recomprime tudo de qualquer jeito.
+> Vale exportar com bitrate menor antes de subir.
+ Mandar o arquivo
 direto para a Graph API pelo navegador não daria: o token só existe no servidor.
 
 - **Facebook** — `POST /{page-id}/videos` com `file_url`, no host

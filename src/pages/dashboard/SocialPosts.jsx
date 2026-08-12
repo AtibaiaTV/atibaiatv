@@ -27,10 +27,12 @@ const MAX_CARROSSEL = 10 // limite de itens do carrossel no Instagram
 
 /* video: o Reels do Instagram aceita de 3 segundos a 15 minutos, mas aqui o
    limite e de 5 minutos, combinado para o post de rede social nao virar
-   programa inteiro. O teto de tamanho segura o envio pelo navegador */
+   programa inteiro. Ja o teto de tamanho e 1 GB porque e o do proprio
+   Instagram — acima disso quem recusa e a Meta, e o arquivo teria subido a toa */
 const MAX_VIDEO_S = 300
 const MIN_VIDEO_S = 3
-const MAX_VIDEO_MB = 300
+const MAX_VIDEO_MB = 1024
+const MAX_VIDEO_ROTULO = '1 GB'
 
 /* quanto de legenda cada rede mostra antes do "ver mais" */
 const REDES = {
@@ -456,7 +458,11 @@ export default function SocialPosts() {
       return
     }
     if (arquivo.size > MAX_VIDEO_MB * 1024 * 1024) {
-      setStatus({ ok: false, msg: 'O arquivo tem ' + Math.round(arquivo.size / 1048576) + ' MB e o limite é ' + MAX_VIDEO_MB + ' MB.' })
+      setStatus({
+        ok: false,
+        msg: 'O arquivo tem ' + Math.round(arquivo.size / 1048576) + ' MB e o limite é ' + MAX_VIDEO_ROTULO
+          + ' — é o teto do próprio Instagram. Exporte com bitrate menor.',
+      })
       return
     }
 
@@ -726,7 +732,8 @@ export default function SocialPosts() {
                     <p style={{ fontSize: '0.68rem', color: '#9ca3af', lineHeight: 1.45 }}>
                       Com vídeo o post sai como <b>Reels</b> no Instagram e como vídeo no feed do Facebook.
                       O vídeo substitui a arte e o carrossel — as redes não misturam os dois no mesmo post.
-                      Prefira vertical (9:16); até {MAX_VIDEO_MB} MB.
+                      Prefira vertical (9:16); até {MAX_VIDEO_ROTULO}. Arquivo grande demora para subir —
+                      acompanhe a porcentagem no botão de publicar.
                     </p>
                   )}
                 </div>
