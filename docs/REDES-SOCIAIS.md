@@ -142,7 +142,9 @@ direto para a Graph API pelo navegador não daria: o token só existe no servido
   pela API vira **Reels** — e aparece no feed, com `share_to_feed`.
 
 O container de vídeo passa por transcodificação e demora bem mais que o de foto:
-a espera vai a **2 minutos** (60 tentativas de 2s) contra 16 segundos da imagem.
+a espera vai a **5 minutos** (150 tentativas de 2s) contra 16 segundos da imagem.
+O prazo é largo de propósito — um MP4 no limite de duração demora mesmo, e
+desistir cedo deixaria o post do Facebook no ar e o do Instagram de fora.
 Enquanto isso o painel avisa que a Meta está processando. Prefira vídeo
 **vertical (9:16)** — é o formato do Reels.
 

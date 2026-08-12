@@ -19,10 +19,12 @@ const GRAPH_VIDEO = 'https://graph-video.facebook.com/v26.0'
 const FB_MIN_SCHEDULE_S = 10 * 60          // a Meta exige no minimo 10 minutos
 const FB_MAX_SCHEDULE_S = 75 * 24 * 3600   // e no maximo 75 dias
 const MAX_CARROSSEL = 10                   // limite de itens do carrossel no Instagram
-/* o container de foto fica pronto em segundos; o de video passa por
-   transcodificacao e precisa de bem mais paciencia */
+/* tentativas de 2 segundos: a foto fica pronta em segundos, o video passa por
+   transcodificacao. Sao 5 minutos de espera porque um MP4 no limite de duracao
+   demora mesmo — desistir antes deixaria o post no Facebook no ar e o do
+   Instagram de fora, com as redes desencontradas */
 const ESPERA_FOTO = 8
-const ESPERA_VIDEO = 60
+const ESPERA_VIDEO = 150
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
