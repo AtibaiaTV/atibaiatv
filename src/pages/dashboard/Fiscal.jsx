@@ -42,10 +42,85 @@ const COR_STATUS_GUIA = {
   'sem-vencimento': '#9ca3af',
 }
 
+function botaoPausaEstilo(cor) {
+  return {
+    background: cor, color: '#fff', border: 'none', borderRadius: 6,
+    padding: '0.4rem 0.9rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+  }
+}
+
 export default function Fiscal() {
   const [dados, setDados] = useState(null)
   const [aoVivo, setAoVivo] = useState(false)
   const [carregando, setCarregando] = useState(true)
+  const [execucao, setExecucao] = useState(null)
+  const [marcadas, setMarcadas] = useState(new Set())
+  const [enviando, setEnviando] = useState(false)
+
+  // Emitir certidão só funciona de verdade quando quem está vendo esta
+  // página está na mesma máquina que roda o servidor local (127.0.0.1
+  // nunca é alcançável de outro computador) — é por isso que tudo isso
+  // fica condicionado a `aoVivo`.
+  async function buscarExecucao() {
+    try {
+      const resposta = await fetch('http://localhost:4747/api/estado')
+      if (!resposta.ok) return
+      const json = await resposta.json()
+      setExecucao(json.execucao)
+    } catch {
+      // silencioso — o polling normal de /api/ping já cobre o caso "offline"
+    }
+  }
+
+  useEffect(() => {
+    if (!aoVivo) return
+    buscarExecucao()
+  }, [aoVivo])
+
+  useEffect(() => {
+    if (!aoVivo) return
+    if (!execucao?.emAndamento && !execucao?.pausa) return
+    const intervalo = setInterval(buscarExecucao, 2000)
+    return () => clearInterval(intervalo)
+  }, [aoVivo, execucao?.emAndamento, execucao?.pausa])
+
+  function alternarMarcada(chave) {
+    setMarcadas((atual) => {
+      const novo = new Set(atual)
+      if (novo.has(chave)) novo.delete(chave)
+      else novo.add(chave)
+      return novo
+    })
+  }
+
+  async function emitirCertidoes() {
+    if (marcadas.size === 0) { alert('Marque ao menos uma certidão.'); return }
+    setEnviando(true)
+    try {
+      const resposta = await fetch('http://localhost:4747/api/rodar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chaves: [...marcadas] }),
+      })
+      if (!resposta.ok) {
+        const erro = await resposta.json()
+        alert(erro.erro || 'Falha ao iniciar emissão.')
+        return
+      }
+      await buscarExecucao()
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  async function continuar(resposta) {
+    await fetch('http://localhost:4747/api/continuar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resposta }),
+    })
+    buscarExecucao()
+  }
 
   useEffect(() => {
     let cancelado = false
@@ -75,6 +150,14 @@ export default function Fiscal() {
     carregar()
     return () => { cancelado = true }
   }, [])
+
+  useEffect(() => {
+    if (!dados) return
+    setMarcadas((atual) => {
+      if (atual.size > 0) return atual
+      return new Set(dados.certidoes.map((c) => c.chave))
+    })
+  }, [dados])
 
   if (carregando) {
     return <div style={{ textAlign: 'center', padding: '4rem', color: '#6b7280' }}>Carregando...</div>
@@ -129,6 +212,7 @@ export default function Fiscal() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
           <thead>
             <tr style={{ textAlign: 'left', color: '#6b7280', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {aoVivo && <th style={{ padding: '0.5rem 0.5rem 0.5rem 0', width: '1.5rem' }} />}
               <th style={{ padding: '0.5rem 0' }}>Certidão</th>
               <th style={{ padding: '0.5rem 0' }}>Situação</th>
               <th style={{ padding: '0.5rem 0' }}>Dias</th>
@@ -137,6 +221,16 @@ export default function Fiscal() {
           <tbody>
             {dados.certidoes.map((certidao) => (
               <tr key={certidao.chave} style={{ borderTop: '1px solid #f3f4f6' }}>
+                {aoVivo && (
+                  <td style={{ padding: '0.6rem 0.5rem 0.6rem 0' }}>
+                    <input
+                      type="checkbox"
+                      checked={marcadas.has(certidao.chave)}
+                      onChange={() => alternarMarcada(certidao.chave)}
+                      disabled={enviando || execucao?.emAndamento || !!execucao?.pausa}
+                    />
+                  </td>
+                )}
                 <td style={{ padding: '0.6rem 0' }}>{NOMES_CERTIDAO[certidao.chave] || certidao.chave}</td>
                 <td style={{ padding: '0.6rem 0', color: COR_STATUS[certidao.status], fontWeight: 600 }}>
                   {ROTULO_STATUS[certidao.status] || certidao.status}
@@ -148,6 +242,52 @@ export default function Fiscal() {
             ))}
           </tbody>
         </table>
+
+        {aoVivo && (
+          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f3f4f6' }}>
+            <button
+              onClick={emitirCertidoes}
+              disabled={enviando || execucao?.emAndamento || !!execucao?.pausa}
+              style={{
+                background: '#4971B1', color: '#fff', border: 'none', borderRadius: 8,
+                padding: '0.55rem 1.1rem', fontSize: '0.85rem', fontWeight: 600,
+                cursor: enviando || execucao?.emAndamento || execucao?.pausa ? 'not-allowed' : 'pointer',
+                opacity: enviando || execucao?.emAndamento || execucao?.pausa ? 0.6 : 1,
+              }}
+            >
+              {execucao?.emAndamento || execucao?.pausa ? 'Emissão em andamento…' : 'Emitir certidões marcadas'}
+            </button>
+
+            {execucao?.pausa && (
+              <div style={{
+                marginTop: '1rem', background: '#eff6ff', border: '1px solid #bfdbfe',
+                borderRadius: 8, padding: '0.85rem 1rem',
+              }}>
+                <p style={{ fontSize: '0.85rem', color: '#1e3a8a', marginBottom: '0.6rem' }}>
+                  {execucao.pausa.mensagem}
+                </p>
+                {execucao.pausa.tipo === 'confirmar' ? (
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={() => continuar('sim')} style={botaoPausaEstilo('#16a34a')}>Sim</button>
+                    <button onClick={() => continuar('nao')} style={botaoPausaEstilo('#dc2626')}>Não</button>
+                  </div>
+                ) : (
+                  <button onClick={() => continuar('ok')} style={botaoPausaEstilo('#4971B1')}>Continuar</button>
+                )}
+              </div>
+            )}
+
+            {execucao?.log && execucao.log.length > 0 && (
+              <pre style={{
+                marginTop: '1rem', background: '#f9fafb', border: '1px solid #f3f4f6',
+                borderRadius: 8, padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#374151',
+                maxHeight: '12rem', overflowY: 'auto', whiteSpace: 'pre-wrap',
+              }}>
+                {execucao.log.map((entrada) => entrada.mensagem).join('\n')}
+              </pre>
+            )}
+          </div>
+        )}
       </div>
 
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', padding: '1.5rem', marginTop: '1.5rem' }}>
