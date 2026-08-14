@@ -87,7 +87,7 @@ export default function Fiscal() {
 
   async function atualizarDocumentos() {
     try {
-      const resposta = await fetch('http://localhost:4747/api/documentos')
+      const resposta = await fetch('http://localhost:4747/api/documentos', { cache: 'no-store' })
       if (!resposta.ok) return
       setDocumentos(await resposta.json())
     } catch {
