@@ -42,6 +42,14 @@ const COR_STATUS_GUIA = {
   'sem-vencimento': '#9ca3af',
 }
 
+const ROTULO_TIPO_DOCUMENTO = {
+  contratos: 'Contrato',
+  'notas-fiscais': 'Nota Fiscal',
+  certidoes: 'Certidão',
+  guias: 'Guia',
+  outros: 'Outro',
+}
+
 function botaoPausaEstilo(cor) {
   return {
     background: cor, color: '#fff', border: 'none', borderRadius: 6,
@@ -56,6 +64,7 @@ export default function Fiscal() {
   const [execucao, setExecucao] = useState(null)
   const [marcadas, setMarcadas] = useState(new Set())
   const [enviando, setEnviando] = useState(false)
+  const [documentos, setDocumentos] = useState(null)
   const emAndamentoAnterior = useRef(false)
 
   // Emitir certidão só funciona de verdade quando quem está vendo esta
@@ -74,6 +83,16 @@ export default function Fiscal() {
     }
   }
 
+  async function atualizarDocumentos() {
+    try {
+      const resposta = await fetch('http://localhost:4747/api/documentos')
+      if (!resposta.ok) return
+      setDocumentos(await resposta.json())
+    } catch {
+      // silencioso — mesma lógica de atualizarPing
+    }
+  }
+
   // /api/estado só traz o progresso da emissão em andamento — as certidões,
   // guias e NFS-e em si (`dados`) só chegam pelo /api/ping. Sem isso, a
   // tabela de certidões ficava presa na foto de quando a página abriu,
@@ -86,6 +105,7 @@ export default function Fiscal() {
       setExecucao(json.execucao)
       if (emAndamentoAnterior.current && !json.execucao.emAndamento) {
         atualizarPing()
+        atualizarDocumentos()
       }
       emAndamentoAnterior.current = json.execucao.emAndamento
     } catch {
@@ -142,6 +162,11 @@ export default function Fiscal() {
     })
     buscarExecucao()
   }
+
+  useEffect(() => {
+    if (!aoVivo) return
+    atualizarDocumentos()
+  }, [aoVivo])
 
   useEffect(() => {
     let cancelado = false
@@ -387,6 +412,77 @@ export default function Fiscal() {
           </table>
         )}
       </div>
+
+      {aoVivo && (
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', padding: '1.5rem', marginTop: '1.5rem' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#1a1a2e', marginBottom: '1rem' }}>Documentos arquivados</h2>
+          {(() => {
+            const itens = [
+              ...(documentos?.documentos || []).map((d) => ({
+                chave: `doc-${d.id}`,
+                tipo: ROTULO_TIPO_DOCUMENTO[d.tipo] || d.tipo,
+                descricao: d.descricao || d.nomeOriginal,
+                cliente: d.cliente,
+                competencia: d.competencia,
+                data: d.arquivadoEm,
+                href: `http://localhost:4747/api/documentos/baixar?tipo=documento&id=${d.id}`,
+              })),
+              ...(documentos?.certidoes || []).map((c) => ({
+                chave: `cert-${c.chave}`,
+                tipo: 'Certidão',
+                descricao: NOMES_CERTIDAO[c.chave] || c.chave,
+                cliente: null,
+                competencia: null,
+                data: c.ultimaEmissao,
+                href: `http://localhost:4747/api/documentos/baixar?tipo=certidao&chave=${c.chave}`,
+              })),
+            ].sort((a, b) => new Date(b.data) - new Date(a.data))
+
+            if (documentos === null) {
+              return <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>Carregando...</p>
+            }
+            if (itens.length === 0) {
+              return <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>Nenhum documento arquivado ainda.</p>
+            }
+            return (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ textAlign: 'left', color: '#6b7280', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <th style={{ padding: '0.5rem 0' }}>Tipo</th>
+                    <th style={{ padding: '0.5rem 0' }}>Descrição</th>
+                    <th style={{ padding: '0.5rem 0' }}>Competência</th>
+                    <th style={{ padding: '0.5rem 0' }}>Arquivado em</th>
+                    <th style={{ padding: '0.5rem 0' }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {itens.map((item) => (
+                    <tr key={item.chave} style={{ borderTop: '1px solid #f3f4f6' }}>
+                      <td style={{ padding: '0.6rem 0' }}>{item.tipo}</td>
+                      <td style={{ padding: '0.6rem 0' }}>
+                        {item.descricao}
+                        {item.cliente ? ` — ${item.cliente}` : ''}
+                      </td>
+                      <td style={{ padding: '0.6rem 0', color: '#6b7280' }}>{item.competencia || '—'}</td>
+                      <td style={{ padding: '0.6rem 0', color: '#6b7280' }}>
+                        {item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '—'}
+                      </td>
+                      <td style={{ padding: '0.6rem 0', textAlign: 'right' }}>
+                        <a
+                          href={item.href}
+                          style={{ color: '#4971B1', fontWeight: 600, textDecoration: 'none' }}
+                        >
+                          Baixar
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
+          })()}
+        </div>
+      )}
     </>
   )
 }
