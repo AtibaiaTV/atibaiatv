@@ -67,6 +67,10 @@ export default function Fiscal() {
   const [documentos, setDocumentos] = useState(null)
   const [registroManual, setRegistroManual] = useState({ chave: '', dataEmissao: '', arquivo: null })
   const [enviandoRegistroManual, setEnviandoRegistroManual] = useState(false)
+  const [alterandoGuiaId, setAlterandoGuiaId] = useState(null)
+  const [novaGuia, setNovaGuia] = useState({ tipo: '', competencia: '', vencimento: '', valor: '', arquivo: null })
+  const [enviandoGuia, setEnviandoGuia] = useState(false)
+  const [filtrosDocumentos, setFiltrosDocumentos] = useState({ tipo: '', busca: '', competencia: '', data: '' })
   const emAndamentoAnterior = useRef(false)
 
   // Emitir certidão só funciona de verdade quando quem está vendo esta
@@ -203,6 +207,77 @@ export default function Fiscal() {
     }
   }
 
+  async function alternarGuiaPaga(guia) {
+    setAlterandoGuiaId(guia.id)
+    try {
+      const resposta = await fetch('http://localhost:4747/api/guias/marcar-paga', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: guia.id, paga: !guia.paga }),
+      })
+      if (!resposta.ok) {
+        const erro = await resposta.json()
+        alert(erro.erro || 'Falha ao atualizar a guia.')
+        return
+      }
+      await atualizarPing()
+    } finally {
+      setAlterandoGuiaId(null)
+    }
+  }
+
+  async function adicionarGuiaComComprovante(evento) {
+    evento.preventDefault()
+    if (!novaGuia.tipo.trim()) {
+      alert('Informe o tipo da guia.')
+      return
+    }
+    setEnviandoGuia(true)
+    try {
+      const resposta = await fetch('http://localhost:4747/api/guias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: novaGuia.tipo,
+          competencia: novaGuia.competencia || undefined,
+          vencimento: novaGuia.vencimento || undefined,
+          valor: novaGuia.valor || undefined,
+        }),
+      })
+      if (!resposta.ok) {
+        const erro = await resposta.json()
+        alert(erro.erro || 'Falha ao cadastrar a guia.')
+        return
+      }
+
+      // Comprovante é opcional — se veio arquivo, arquiva separado (não
+      // trava o cadastro da guia se o upload falhar por algum motivo).
+      if (novaGuia.arquivo) {
+        try {
+          const conteudoBase64 = await lerArquivoComoBase64(novaGuia.arquivo)
+          await fetch('http://localhost:4747/api/guias/arquivar-comprovante', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              nomeArquivo: novaGuia.arquivo.name,
+              conteudoBase64,
+              competencia: novaGuia.competencia || undefined,
+              descricao: novaGuia.tipo,
+            }),
+          })
+        } catch {
+          alert('Guia cadastrada, mas não consegui subir o comprovante.')
+        }
+      }
+
+      setNovaGuia({ tipo: '', competencia: '', vencimento: '', valor: '', arquivo: null })
+      await atualizarPing()
+      await atualizarDocumentos()
+    } finally {
+      setEnviandoGuia(false)
+    }
+  }
+
   async function continuar(resposta) {
     await fetch('http://localhost:4747/api/continuar', {
       method: 'POST',
@@ -311,6 +386,8 @@ export default function Fiscal() {
               <th style={{ padding: '0.5rem 0' }}>Certidão</th>
               <th style={{ padding: '0.5rem 0' }}>Situação</th>
               <th style={{ padding: '0.5rem 0' }}>Dias</th>
+              <th style={{ padding: '0.5rem 0' }}>Validade</th>
+              <th style={{ padding: '0.5rem 0' }}></th>
             </tr>
           </thead>
           <tbody>
@@ -332,6 +409,36 @@ export default function Fiscal() {
                 </td>
                 <td style={{ padding: '0.6rem 0', color: '#6b7280' }}>
                   {certidao.diasFaltando != null ? certidao.diasFaltando : '—'}
+                </td>
+                <td style={{ padding: '0.6rem 0', color: '#6b7280' }}>
+                  <span
+                    title={ROTULO_STATUS[certidao.status] || certidao.status}
+                    style={{
+                      display: 'inline-block', width: 9, height: 9, borderRadius: '50%',
+                      background: COR_STATUS[certidao.status], marginRight: '0.5rem', verticalAlign: 'middle',
+                    }}
+                  />
+                  {certidao.vencimento ? new Date(certidao.vencimento).toLocaleDateString('pt-BR') : '—'}
+                </td>
+                <td style={{ padding: '0.6rem 0', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  {aoVivo && certidao.arquivo && (
+                    <>
+                      <a
+                        href={`http://localhost:4747/api/documentos/baixar?tipo=certidao&chave=${certidao.chave}&modo=ver`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: '#4971B1', fontWeight: 600, textDecoration: 'none' }}
+                      >
+                        Ver
+                      </a>
+                      <a
+                        href={`http://localhost:4747/api/documentos/baixar?tipo=certidao&chave=${certidao.chave}&modo=baixar`}
+                        style={{ color: '#4971B1', fontWeight: 600, textDecoration: 'none', marginLeft: '1rem' }}
+                      >
+                        Baixar
+                      </a>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}
@@ -449,6 +556,7 @@ export default function Fiscal() {
                 <th style={{ padding: '0.5rem 0' }}>Valor</th>
                 <th style={{ padding: '0.5rem 0' }}>Vencimento</th>
                 <th style={{ padding: '0.5rem 0' }}>Situação</th>
+                {aoVivo && <th style={{ padding: '0.5rem 0' }}></th>}
               </tr>
             </thead>
             <tbody>
@@ -461,10 +569,82 @@ export default function Fiscal() {
                   <td style={{ padding: '0.6rem 0', color: COR_STATUS_GUIA[guia.status], fontWeight: 600 }}>
                     {ROTULO_STATUS_GUIA[guia.status] || guia.status}
                   </td>
+                  {aoVivo && (
+                    <td style={{ padding: '0.6rem 0', textAlign: 'right' }}>
+                      <button
+                        onClick={() => alternarGuiaPaga(guia)}
+                        disabled={alterandoGuiaId === guia.id}
+                        style={{
+                          background: 'none', border: '1px solid #d1d5db', borderRadius: 6,
+                          padding: '0.25rem 0.6rem', fontSize: '0.75rem', color: '#374151',
+                          cursor: alterandoGuiaId === guia.id ? 'not-allowed' : 'pointer',
+                          opacity: alterandoGuiaId === guia.id ? 0.6 : 1,
+                        }}
+                      >
+                        {guia.paga ? 'Marcar em aberto' : 'Marcar paga'}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
+        )}
+
+        {aoVivo && (
+          <form
+            onSubmit={adicionarGuiaComComprovante}
+            style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #f3f4f6' }}
+          >
+            <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.6rem' }}>Cadastrar nova guia (com comprovante de pagamento, se já estiver paga):</p>
+            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="Tipo (ex: DAS Mensal)"
+                value={novaGuia.tipo}
+                onChange={(e) => setNovaGuia((g) => ({ ...g, tipo: e.target.value }))}
+                style={{ padding: '0.4rem 0.6rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.82rem', flex: '1 1 200px' }}
+              />
+              <input
+                type="text"
+                placeholder="Competência"
+                value={novaGuia.competencia}
+                onChange={(e) => setNovaGuia((g) => ({ ...g, competencia: e.target.value }))}
+                style={{ padding: '0.4rem 0.6rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.82rem', width: '8rem' }}
+              />
+              <input
+                type="text"
+                placeholder="Vencimento dd/mm/aaaa"
+                value={novaGuia.vencimento}
+                onChange={(e) => setNovaGuia((g) => ({ ...g, vencimento: e.target.value }))}
+                style={{ padding: '0.4rem 0.6rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.82rem', width: '10rem' }}
+              />
+              <input
+                type="text"
+                placeholder="Valor"
+                value={novaGuia.valor}
+                onChange={(e) => setNovaGuia((g) => ({ ...g, valor: e.target.value }))}
+                style={{ padding: '0.4rem 0.6rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.82rem', width: '7rem' }}
+              />
+              <input
+                type="file"
+                onChange={(e) => setNovaGuia((g) => ({ ...g, arquivo: e.target.files?.[0] || null }))}
+                style={{ fontSize: '0.82rem' }}
+              />
+              <button
+                type="submit"
+                disabled={enviandoGuia}
+                style={{
+                  background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 6,
+                  padding: '0.4rem 0.9rem', fontSize: '0.82rem', fontWeight: 600,
+                  cursor: enviandoGuia ? 'not-allowed' : 'pointer',
+                  opacity: enviandoGuia ? 0.6 : 1,
+                }}
+              >
+                {enviandoGuia ? 'Enviando…' : 'Cadastrar'}
+              </button>
+            </div>
+          </form>
         )}
       </div>
 
@@ -539,7 +719,75 @@ export default function Fiscal() {
             if (itens.length === 0) {
               return <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>Nenhum documento arquivado ainda.</p>
             }
+
+            const tiposDisponiveis = [...new Set(itens.map((i) => i.tipo))].sort()
+            const competenciasDisponiveis = [...new Set(itens.map((i) => i.competencia).filter(Boolean))].sort()
+            const buscaLower = filtrosDocumentos.busca.trim().toLowerCase()
+            const itensFiltrados = itens.filter((item) => {
+              if (filtrosDocumentos.tipo && item.tipo !== filtrosDocumentos.tipo) return false
+              if (filtrosDocumentos.competencia && item.competencia !== filtrosDocumentos.competencia) return false
+              if (buscaLower && !item.descricao?.toLowerCase().includes(buscaLower)) return false
+              if (filtrosDocumentos.data) {
+                const diaItem = item.data ? new Date(item.data).toLocaleDateString('en-CA') : null
+                if (diaItem !== filtrosDocumentos.data) return false
+              }
+              return true
+            })
+            const limparFiltros = () => setFiltrosDocumentos({ tipo: '', busca: '', competencia: '', data: '' })
+            const temFiltroAtivo = Object.values(filtrosDocumentos).some(Boolean)
+
             return (
+              <>
+                <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
+                  <select
+                    value={filtrosDocumentos.tipo}
+                    onChange={(e) => setFiltrosDocumentos((f) => ({ ...f, tipo: e.target.value }))}
+                    style={{ padding: '0.4rem 0.6rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.8rem' }}
+                  >
+                    <option value="">Todos os tipos</option>
+                    {tiposDisponiveis.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <select
+                    value={filtrosDocumentos.competencia}
+                    onChange={(e) => setFiltrosDocumentos((f) => ({ ...f, competencia: e.target.value }))}
+                    style={{ padding: '0.4rem 0.6rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.8rem' }}
+                  >
+                    <option value="">Todas as competências</option>
+                    {competenciasDisponiveis.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <input
+                    type="date"
+                    value={filtrosDocumentos.data}
+                    onChange={(e) => setFiltrosDocumentos((f) => ({ ...f, data: e.target.value }))}
+                    title="Filtrar por data de arquivamento"
+                    style={{ padding: '0.4rem 0.6rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.8rem' }}
+                  />
+                  <input
+                    type="text"
+                    list="sugestoes-busca-documentos"
+                    placeholder="Buscar na descrição…"
+                    value={filtrosDocumentos.busca}
+                    onChange={(e) => setFiltrosDocumentos((f) => ({ ...f, busca: e.target.value }))}
+                    style={{ padding: '0.4rem 0.6rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.8rem', flex: '1 1 180px' }}
+                  />
+                  <datalist id="sugestoes-busca-documentos">
+                    {[...new Set(itens.map((i) => i.descricao).filter(Boolean))].map((d) => (
+                      <option key={d} value={d} />
+                    ))}
+                  </datalist>
+                  {temFiltroAtivo && (
+                    <button
+                      onClick={limparFiltros}
+                      style={{ background: 'none', border: 'none', color: '#4971B1', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Limpar filtros
+                    </button>
+                  )}
+                </div>
+
+                {itensFiltrados.length === 0 ? (
+                  <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>Nenhum documento encontrado com esses filtros.</p>
+                ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ textAlign: 'left', color: '#6b7280', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -551,7 +799,7 @@ export default function Fiscal() {
                   </tr>
                 </thead>
                 <tbody>
-                  {itens.map((item) => (
+                  {itensFiltrados.map((item) => (
                     <tr key={item.chave} style={{ borderTop: '1px solid #f3f4f6' }}>
                       <td style={{ padding: '0.6rem 0' }}>{item.tipo}</td>
                       <td style={{ padding: '0.6rem 0' }}>
@@ -582,6 +830,8 @@ export default function Fiscal() {
                   ))}
                 </tbody>
               </table>
+                )}
+              </>
             )
           })()}
         </div>
