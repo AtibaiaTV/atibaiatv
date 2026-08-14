@@ -65,6 +65,8 @@ export default function Fiscal() {
   const [marcadas, setMarcadas] = useState(new Set())
   const [enviando, setEnviando] = useState(false)
   const [documentos, setDocumentos] = useState(null)
+  const [registroManual, setRegistroManual] = useState({ chave: '', dataEmissao: '', arquivo: null })
+  const [enviandoRegistroManual, setEnviandoRegistroManual] = useState(false)
   const emAndamentoAnterior = useRef(false)
 
   // Emitir certidão só funciona de verdade quando quem está vendo esta
@@ -151,6 +153,53 @@ export default function Fiscal() {
       await buscarExecucao()
     } finally {
       setEnviando(false)
+    }
+  }
+
+  function lerArquivoComoBase64(arquivo) {
+    return new Promise((resolve, reject) => {
+      const leitor = new FileReader()
+      leitor.onload = () => resolve(String(leitor.result).split(',')[1] || '')
+      leitor.onerror = () => reject(leitor.error)
+      leitor.readAsDataURL(arquivo)
+    })
+  }
+
+  // Para certidões que não saem na hora pelo robô (ex: TJSP e-SAJ, liberada
+  // por e-mail em até 5 dias úteis) — o usuário baixa o PDF do link do
+  // e-mail e sobe aqui, com a data real de emissão, pra validade contar
+  // certo em vez de a partir de hoje.
+  async function registrarManualmente(evento) {
+    evento.preventDefault()
+    if (!registroManual.chave || !registroManual.arquivo) {
+      alert('Escolha a certidão e o arquivo.')
+      return
+    }
+    setEnviandoRegistroManual(true)
+    try {
+      const conteudoBase64 = await lerArquivoComoBase64(registroManual.arquivo)
+      const resposta = await fetch('http://localhost:4747/api/certidoes/registrar-manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chave: registroManual.chave,
+          dataEmissao: registroManual.dataEmissao || undefined,
+          nomeArquivo: registroManual.arquivo.name,
+          conteudoBase64,
+        }),
+      })
+      if (!resposta.ok) {
+        const erro = await resposta.json()
+        alert(erro.erro || 'Falha ao registrar certidão.')
+        return
+      }
+      setRegistroManual({ chave: '', dataEmissao: '', arquivo: null })
+      await atualizarPing()
+      await atualizarDocumentos()
+    } catch {
+      alert('Não consegui ler ou enviar o arquivo.')
+    } finally {
+      setEnviandoRegistroManual(false)
     }
   }
 
@@ -337,6 +386,52 @@ export default function Fiscal() {
                 {execucao.log.map((entrada) => entrada.mensagem).join('\n')}
               </pre>
             )}
+
+            <form
+              onSubmit={registrarManualmente}
+              style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #f3f4f6' }}
+            >
+              <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.6rem' }}>
+                Certidão que chegou por fora do robô (ex: TJSP e-SAJ, liberada por e-mail dias depois do
+                pedido)? Registre o arquivo aqui pra ela contar como válida.
+              </p>
+              <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                <select
+                  value={registroManual.chave}
+                  onChange={(e) => setRegistroManual((r) => ({ ...r, chave: e.target.value }))}
+                  style={{ padding: '0.4rem 0.6rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.82rem' }}
+                >
+                  <option value="">Qual certidão?</option>
+                  {dados.certidoes.map((c) => (
+                    <option key={c.chave} value={c.chave}>{NOMES_CERTIDAO[c.chave] || c.chave}</option>
+                  ))}
+                </select>
+                <input
+                  type="date"
+                  value={registroManual.dataEmissao}
+                  onChange={(e) => setRegistroManual((r) => ({ ...r, dataEmissao: e.target.value }))}
+                  title="Data de emissão (opcional, padrão hoje)"
+                  style={{ padding: '0.4rem 0.6rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.82rem' }}
+                />
+                <input
+                  type="file"
+                  onChange={(e) => setRegistroManual((r) => ({ ...r, arquivo: e.target.files?.[0] || null }))}
+                  style={{ fontSize: '0.82rem' }}
+                />
+                <button
+                  type="submit"
+                  disabled={enviandoRegistroManual}
+                  style={{
+                    background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 6,
+                    padding: '0.4rem 0.9rem', fontSize: '0.82rem', fontWeight: 600,
+                    cursor: enviandoRegistroManual ? 'not-allowed' : 'pointer',
+                    opacity: enviandoRegistroManual ? 0.6 : 1,
+                  }}
+                >
+                  {enviandoRegistroManual ? 'Enviando…' : 'Registrar'}
+                </button>
+              </div>
+            </form>
           </div>
         )}
       </div>
