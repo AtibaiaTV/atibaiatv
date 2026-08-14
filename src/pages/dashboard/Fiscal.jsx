@@ -26,6 +26,22 @@ const COR_STATUS = {
   vencida: '#dc2626',
 }
 
+const ROTULO_STATUS_GUIA = {
+  paga: 'paga',
+  'a-vencer': 'a vencer',
+  vencendo: 'vencendo em breve',
+  vencida: 'VENCIDA',
+  'sem-vencimento': 'sem vencimento',
+}
+
+const COR_STATUS_GUIA = {
+  paga: '#9ca3af',
+  'a-vencer': '#16a34a',
+  vencendo: '#d97706',
+  vencida: '#dc2626',
+  'sem-vencimento': '#9ca3af',
+}
+
 export default function Fiscal() {
   const [dados, setDados] = useState(null)
   const [aoVivo, setAoVivo] = useState(false)
@@ -79,6 +95,8 @@ export default function Fiscal() {
 
   const vencidas = dados.certidoes.filter((c) => c.status === 'vencida').length
   const vencendo = dados.certidoes.filter((c) => c.status === 'vencendo').length
+  const listaGuias = dados.guias.lista || []
+  const ultimasNfse = dados.nfse?.ultimasEmitidas || []
 
   return (
     <>
@@ -130,6 +148,78 @@ export default function Fiscal() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', padding: '1.5rem', marginTop: '1.5rem' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#1a1a2e', marginBottom: '1rem' }}>Guias de tributos</h2>
+        {listaGuias.length === 0 ? (
+          <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>Nenhuma guia cadastrada ainda.</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+            <thead>
+              <tr style={{ textAlign: 'left', color: '#6b7280', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <th style={{ padding: '0.5rem 0' }}>Tipo</th>
+                <th style={{ padding: '0.5rem 0' }}>Competência</th>
+                <th style={{ padding: '0.5rem 0' }}>Valor</th>
+                <th style={{ padding: '0.5rem 0' }}>Vencimento</th>
+                <th style={{ padding: '0.5rem 0' }}>Situação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {listaGuias.map((guia) => (
+                <tr key={guia.id} style={{ borderTop: '1px solid #f3f4f6' }}>
+                  <td style={{ padding: '0.6rem 0' }}>{guia.tipo}</td>
+                  <td style={{ padding: '0.6rem 0' }}>{guia.competencia || '—'}</td>
+                  <td style={{ padding: '0.6rem 0' }}>{guia.valor || '—'}</td>
+                  <td style={{ padding: '0.6rem 0' }}>{guia.vencimento || '—'}</td>
+                  <td style={{ padding: '0.6rem 0', color: COR_STATUS_GUIA[guia.status], fontWeight: 600 }}>
+                    {ROTULO_STATUS_GUIA[guia.status] || guia.status}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', padding: '1.5rem', marginTop: '1.5rem' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#1a1a2e', marginBottom: '1rem' }}>Últimas NFS-e emitidas</h2>
+        {ultimasNfse.length === 0 ? (
+          <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>Nenhuma NFS-e emitida por esta ferramenta ainda.</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+            <thead>
+              <tr style={{ textAlign: 'left', color: '#6b7280', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <th style={{ padding: '0.5rem 0' }}>Tomador</th>
+                <th style={{ padding: '0.5rem 0' }}>Competência</th>
+                <th style={{ padding: '0.5rem 0' }}>Valor</th>
+                <th style={{ padding: '0.5rem 0' }}>Ambiente</th>
+                <th style={{ padding: '0.5rem 0' }}>Emitida em</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ultimasNfse.map((nfse) => (
+                <tr key={nfse.chaveAcesso} style={{ borderTop: '1px solid #f3f4f6' }}>
+                  <td style={{ padding: '0.6rem 0' }}>{nfse.tomadorNome || '—'}</td>
+                  <td style={{ padding: '0.6rem 0' }}>{nfse.competencia || '—'}</td>
+                  <td style={{ padding: '0.6rem 0' }}>R$ {Number(nfse.valorServico).toFixed(2)}</td>
+                  <td style={{ padding: '0.6rem 0' }}>
+                    <span style={{
+                      fontSize: '0.72rem', fontWeight: 600, padding: '2px 8px', borderRadius: 999,
+                      background: nfse.ambiente === 'producao' ? '#dcfce7' : '#fef3c7',
+                      color: nfse.ambiente === 'producao' ? '#16a34a' : '#92400e',
+                    }}>
+                      {nfse.ambiente === 'producao' ? 'PRODUÇÃO' : 'homologação'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '0.6rem 0', color: '#6b7280' }}>
+                    {new Date(nfse.emitidoEm).toLocaleString('pt-BR')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </>
   )
