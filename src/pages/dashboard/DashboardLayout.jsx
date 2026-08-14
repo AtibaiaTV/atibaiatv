@@ -10,6 +10,7 @@ const NAV = [
   { to: '/dashboard/social', label: 'Redes Sociais', icon: '📣' },
   { to: '/dashboard/ticker', label: 'Ticker', icon: '📢' },
   { to: '/dashboard/banners', label: 'Banners', icon: '🖼️' },
+  { to: '/dashboard/fiscal', label: 'Fiscal', icon: '💰' },
 ]
 
 export default function DashboardLayout() {

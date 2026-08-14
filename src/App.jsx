@@ -27,6 +27,7 @@ import BannerForm        from './pages/dashboard/BannerForm'
 import DenunciasList     from './pages/dashboard/DenunciasList'
 import EnquetesList      from './pages/dashboard/EnquetesList'
 import SocialPosts       from './pages/dashboard/SocialPosts'
+import Fiscal             from './pages/dashboard/Fiscal'
 
 function PublicLayout() {
   return (
@@ -96,6 +97,7 @@ export default function App() {
           <Route path="/dashboard/denuncias"    element={<DenunciasList />} />
           <Route path="/dashboard/enquetes"     element={<EnquetesList />} />
           <Route path="/dashboard/social"       element={<SocialPosts />} />
+          <Route path="/dashboard/fiscal"       element={<Fiscal />} />
         </Route>
       </Route>
     </Routes>
