@@ -425,7 +425,7 @@ export default function Fiscal() {
                 cliente: d.cliente,
                 competencia: d.competencia,
                 data: d.arquivadoEm,
-                href: `http://localhost:4747/api/documentos/baixar?tipo=documento&id=${d.id}`,
+                hrefBase: `http://localhost:4747/api/documentos/baixar?tipo=documento&id=${d.id}`,
               })),
               ...(documentos?.certidoes || []).map((c) => ({
                 chave: `cert-${c.chave}`,
@@ -434,7 +434,7 @@ export default function Fiscal() {
                 cliente: null,
                 competencia: null,
                 data: c.ultimaEmissao,
-                href: `http://localhost:4747/api/documentos/baixar?tipo=certidao&chave=${c.chave}`,
+                hrefBase: `http://localhost:4747/api/documentos/baixar?tipo=certidao&chave=${c.chave}`,
               })),
             ].sort((a, b) => new Date(b.data) - new Date(a.data))
 
@@ -467,10 +467,18 @@ export default function Fiscal() {
                       <td style={{ padding: '0.6rem 0', color: '#6b7280' }}>
                         {item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '—'}
                       </td>
-                      <td style={{ padding: '0.6rem 0', textAlign: 'right' }}>
+                      <td style={{ padding: '0.6rem 0', textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <a
-                          href={item.href}
+                          href={`${item.hrefBase}&modo=ver`}
+                          target="_blank"
+                          rel="noreferrer"
                           style={{ color: '#4971B1', fontWeight: 600, textDecoration: 'none' }}
+                        >
+                          Ver
+                        </a>
+                        <a
+                          href={`${item.hrefBase}&modo=baixar`}
+                          style={{ color: '#4971B1', fontWeight: 600, textDecoration: 'none', marginLeft: '1rem' }}
                         >
                           Baixar
                         </a>
