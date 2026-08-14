@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import DashCard from '../../components/dashboard/DashCard'
 
 const CHAVE_CACHE = 'atibaiatv-certidoes-ultimo-estado'
@@ -56,17 +56,38 @@ export default function Fiscal() {
   const [execucao, setExecucao] = useState(null)
   const [marcadas, setMarcadas] = useState(new Set())
   const [enviando, setEnviando] = useState(false)
+  const emAndamentoAnterior = useRef(false)
 
   // Emitir certidão só funciona de verdade quando quem está vendo esta
   // página está na mesma máquina que roda o servidor local (127.0.0.1
   // nunca é alcançável de outro computador) — é por isso que tudo isso
   // fica condicionado a `aoVivo`.
+  async function atualizarPing() {
+    try {
+      const resposta = await fetch('http://localhost:4747/api/ping')
+      if (!resposta.ok) return
+      const json = await resposta.json()
+      localStorage.setItem(CHAVE_CACHE, JSON.stringify(json))
+      setDados(json)
+    } catch {
+      // silencioso — não derruba a tela por causa de uma atualização em segundo plano
+    }
+  }
+
+  // /api/estado só traz o progresso da emissão em andamento — as certidões,
+  // guias e NFS-e em si (`dados`) só chegam pelo /api/ping. Sem isso, a
+  // tabela de certidões ficava presa na foto de quando a página abriu,
+  // mesmo depois de uma emissão terminar com sucesso.
   async function buscarExecucao() {
     try {
       const resposta = await fetch('http://localhost:4747/api/estado')
       if (!resposta.ok) return
       const json = await resposta.json()
       setExecucao(json.execucao)
+      if (emAndamentoAnterior.current && !json.execucao.emAndamento) {
+        atualizarPing()
+      }
+      emAndamentoAnterior.current = json.execucao.emAndamento
     } catch {
       // silencioso — o polling normal de /api/ping já cobre o caso "offline"
     }
@@ -272,7 +293,12 @@ export default function Fiscal() {
                     <button onClick={() => continuar('nao')} style={botaoPausaEstilo('#dc2626')}>Não</button>
                   </div>
                 ) : (
-                  <button onClick={() => continuar('ok')} style={botaoPausaEstilo('#4971B1')}>Continuar</button>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={() => continuar('ok')} style={botaoPausaEstilo('#4971B1')}>Continuar</button>
+                    <button onClick={() => continuar('falhou')} style={botaoPausaEstilo('#dc2626')}>
+                      Não consegui emitir
+                    </button>
+                  </div>
                 )}
               </div>
             )}
