@@ -77,6 +77,43 @@ export default function SocialPostsHistory({ recarregar }) {
     setOcupado(null)
   }
 
+  /* so o Facebook aceita editar legenda pela API; o Instagram nao tem esse
+     endpoint na Graph API, so dá pra trocar a legenda direto no app */
+  const editarLegenda = async (post) => {
+    const alvo = (post.published || []).find(p => p.network === 'facebook' && p.id)
+    if (!alvo) return
+
+    const nova = window.prompt('Nova legenda para o Facebook:', post.caption || '')
+    if (nova === null) return
+    if (!nova.trim()) { setStatus({ ok: false, msg: 'A legenda não pode ficar vazia.' }); return }
+
+    setOcupado(post.id)
+    setStatus(null)
+    try {
+      const idToken = await user.getIdToken()
+      const res = await fetch('/api/social-edit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ idToken, id: alvo.id, kind: alvo.kind, message: nova }),
+      })
+      const bruto = await res.text()
+      let data
+      try {
+        data = JSON.parse(bruto)
+      } catch {
+        throw new Error('o servidor respondeu HTTP ' + res.status + ' em vez de JSON.')
+      }
+      if (!res.ok) throw new Error(data.error || 'erro inesperado (HTTP ' + res.status + ')')
+
+      await updateDoc(doc(db, 'socialPosts', post.id), { caption: nova })
+      setStatus({ ok: true, msg: 'Legenda atualizada no Facebook.' })
+      await carregar()
+    } catch (e) {
+      setStatus({ ok: false, msg: 'Erro ao editar: ' + e.message })
+    }
+    setOcupado(null)
+  }
+
   const removerDoHistorico = async (post) => {
     if (!window.confirm('Remover do histórico?\n\nO post sai desta lista. O que já foi publicado continua no ar nas redes.')) return
     setOcupado(post.id)
@@ -152,6 +189,10 @@ export default function SocialPostsHistory({ recarregar }) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+              {(post.published || []).some(p => p.network === 'facebook' && p.id) && (
+                <button disabled={ocupado === post.id} onClick={() => editarLegenda(post)}
+                  style={btn('#fff', '#4971B1', '1px solid #cfdcf0')}>✏️ Editar legenda</button>
+              )}
               {(post.published || []).length > 0 && (
                 <button disabled={ocupado === post.id} onClick={() => excluirDaRede(post)}
                   style={btn('#fff', '#Cd0000', '1px solid #f3d0d0')}>🗑️ Excluir da rede</button>

@@ -299,6 +299,9 @@ export async function onRequestPost(context) {
           ? 'https://www.facebook.com/' + pageId + '/videos/' + postId
           : 'https://www.facebook.com/' + postId,
         scheduled: Boolean(scheduleAt),
+        /* video usa o campo "description" pra editar depois, post de feed usa
+           "message" — o social-edit precisa saber qual dos dois mandar */
+        kind: ehVideo ? 'video' : 'feed',
       })
     } catch (e) {
       errors.push('Facebook: ' + e.message)
