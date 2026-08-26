@@ -340,6 +340,10 @@ export async function onRequestPost(context) {
     }
   }
 
-  if (!results.length) return json({ error: errors.join(' · ') || 'nada foi publicado' }, 502)
+  /* 422 e nao 502: o Cloudflare intercepta respostas 502/504/52x na borda e troca
+     o corpo pela sua propria pagina de erro generica, mesmo quando a funcao
+     respondeu certinho com um JSON explicando o motivo. Isso fazia a tela
+     mostrar "HTTP 502 em vez de JSON" escondendo a mensagem real do erro */
+  if (!results.length) return json({ error: errors.join(' · ') || 'nada foi publicado' }, 422)
   return json({ results, errors, published, igContainerId })
 }
