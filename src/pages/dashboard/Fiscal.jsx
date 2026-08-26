@@ -10,7 +10,15 @@ const NOMES_CERTIDAO = {
   fgts: 'FGTS (Caixa)',
   tjsp: 'Falências e Concordatas (TJSP)',
   cndt: 'CNDT (TST)',
+  cnpj: 'Cartão CNPJ',
+  mobiliaria: 'Tributos Mobiliários (Prefeitura)',
 }
+
+// Certidões sem entrada em sites.js (só saem por pedido 100% manual, sem
+// nenhum passo automatizável) — não faz sentido oferecer checkbox de
+// emissão pra essas. Hoje nenhuma está nesse caso (mobiliária ganhou
+// automação do pedido em 2026-08-14), mas o mecanismo fica pronto.
+const CERTIDOES_SOMENTE_MANUAL = new Set([])
 
 const ROTULO_STATUS = {
   'nunca-emitida': 'nunca emitida',
@@ -325,7 +333,7 @@ export default function Fiscal() {
     if (!dados) return
     setMarcadas((atual) => {
       if (atual.size > 0) return atual
-      return new Set(dados.certidoes.map((c) => c.chave))
+      return new Set(dados.certidoes.map((c) => c.chave).filter((chave) => !CERTIDOES_SOMENTE_MANUAL.has(chave)))
     })
   }, [dados])
 
@@ -395,15 +403,22 @@ export default function Fiscal() {
               <tr key={certidao.chave} style={{ borderTop: '1px solid #f3f4f6' }}>
                 {aoVivo && (
                   <td style={{ padding: '0.6rem 0.5rem 0.6rem 0' }}>
-                    <input
-                      type="checkbox"
-                      checked={marcadas.has(certidao.chave)}
-                      onChange={() => alternarMarcada(certidao.chave)}
-                      disabled={enviando || execucao?.emAndamento || !!execucao?.pausa}
-                    />
+                    {!CERTIDOES_SOMENTE_MANUAL.has(certidao.chave) && (
+                      <input
+                        type="checkbox"
+                        checked={marcadas.has(certidao.chave)}
+                        onChange={() => alternarMarcada(certidao.chave)}
+                        disabled={enviando || execucao?.emAndamento || !!execucao?.pausa}
+                      />
+                    )}
                   </td>
                 )}
-                <td style={{ padding: '0.6rem 0' }}>{NOMES_CERTIDAO[certidao.chave] || certidao.chave}</td>
+                <td style={{ padding: '0.6rem 0' }}>
+                  {NOMES_CERTIDAO[certidao.chave] || certidao.chave}
+                  {CERTIDOES_SOMENTE_MANUAL.has(certidao.chave) && (
+                    <span style={{ marginLeft: '0.4rem', fontSize: '0.7rem', color: '#9ca3af' }}>(manual — 1doc)</span>
+                  )}
+                </td>
                 <td style={{ padding: '0.6rem 0', color: COR_STATUS[certidao.status], fontWeight: 600 }}>
                   {ROTULO_STATUS[certidao.status] || certidao.status}
                 </td>

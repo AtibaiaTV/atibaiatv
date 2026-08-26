@@ -72,7 +72,7 @@ export default function Footer() {
               <div style={{ marginTop: 16 }}>
                 <div style={{ fontSize: '0.65rem', color: '#9aa1ac', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Canal afiliado</div>
                 <div style={{ display: 'inline-flex', background: '#0d1b2a', borderRadius: 8, padding: '6px 10px' }}>
-                  <img src="/logos/logo-redesa.png" alt="Redesa" height={28}
+                  <img src="/logos/logo-redesa.svg" alt="Redesa" height={28}
                     style={{ objectFit: 'contain', display: 'block' }}
                     onError={e => { e.target.parentElement.style.display = 'none' }}
                   />
