@@ -5,6 +5,10 @@ import { useNavigate, Link } from 'react-router-dom'
 
 const TYPE_LABELS = { billboard: 'Billboard (1920x200)', leaderboard: 'Leaderboard (1200x300)', square: 'Square (300x300)' }
 
+/* tempo que cada banner fica na tela antes de rotacionar (carrossel) */
+const DURATION_OPTIONS = [3, 5, 8, 10, 15, 20, 30]
+const DEFAULT_DURATION = 5
+
 export default function BannersList() {
   const [banners, setBanners] = useState([])
   const [loading, setLoading] = useState(true)
@@ -18,6 +22,11 @@ export default function BannersList() {
   }
 
   useEffect(() => { fetchBanners() }, [])
+
+  const changeDuration = async (banner, seconds) => {
+    setBanners(list => list.map(b => b.id === banner.id ? { ...b, durationSec: seconds } : b))
+    await updateDoc(doc(db, 'banners', banner.id), { durationSec: seconds })
+  }
 
   const toggleActive = async (banner) => {
     await updateDoc(doc(db, 'banners', banner.id), { active: !banner.active })
@@ -58,6 +67,16 @@ export default function BannersList() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                   <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '3px 10px', borderRadius: 10, background: '#eef3fa', color: '#4971B1' }}>{TYPE_LABELS[b.type] || b.type}</span>
                   <span style={{ fontSize: '0.68rem', fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: b.active ? '#edf7e8' : '#f3f4f6', color: b.active ? '#4a7a35' : '#9ca3af' }}>{b.active ? 'Ativo' : 'Inativo'}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <span style={{ fontSize: '0.72rem', color: '#6b7280' }}>Tempo de exibicao</span>
+                  <select
+                    value={b.durationSec || DEFAULT_DURATION}
+                    onChange={e => changeDuration(b, Number(e.target.value))}
+                    style={{ marginLeft: 'auto', padding: '4px 8px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#fff', fontSize: '0.75rem', color: '#374151', cursor: 'pointer' }}
+                  >
+                    {DURATION_OPTIONS.map(s => <option key={s} value={s}>{s}s</option>)}
+                  </select>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button onClick={() => toggleActive(b)} style={{ flex: 1, padding: '6px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#fff', fontSize: '0.75rem', cursor: 'pointer', color: '#374151' }}>{b.active ? 'Desativar' : 'Ativar'}</button>

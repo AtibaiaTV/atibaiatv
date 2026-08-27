@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { SIZES } from './AdBanner'
 
-var INTERVAL_MS = 5000
+var DEFAULT_DURATION_SEC = 5
 
 /* embaralha array sem mutacao */
 function shuffle(arr) {
@@ -46,13 +46,16 @@ export default function BannerCarousel({ banners, width, height, type }) {
     }
   }, [banners])
 
+  /* cada banner fica na tela pelo tempo configurado no painel (durationSec) */
   useEffect(function() {
     if (list.length < 2) return
-    timerRef.current = setInterval(function() {
+    var current = list[active] || {}
+    var secs = Number(current.durationSec) > 0 ? Number(current.durationSec) : DEFAULT_DURATION_SEC
+    timerRef.current = setTimeout(function() {
       setActive(function(prev) { return (prev + 1) % list.length })
-    }, INTERVAL_MS)
-    return function() { clearInterval(timerRef.current) }
-  }, [list])
+    }, secs * 1000)
+    return function() { clearTimeout(timerRef.current) }
+  }, [list, active])
 
   if (!list || list.length === 0) {
     if (size) return null // billboard/leaderboard: sem banner, sem espaco reservado
@@ -125,7 +128,7 @@ export default function BannerCarousel({ banners, width, height, type }) {
             return (
               <button
                 key={i}
-                onClick={function() { setActive(i); clearInterval(timerRef.current) }}
+                onClick={function() { setActive(i); clearTimeout(timerRef.current) }}
                 style={{
                   width: i === active ? 16 : 6,
                   height: 6, borderRadius: 3,

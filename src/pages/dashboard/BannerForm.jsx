@@ -10,7 +10,7 @@ export default function BannerForm() {
   const navigate = useNavigate()
   const isEdit = Boolean(id)
 
-  const [form, setForm] = useState({ type: 'billboard', mediaUrl: '', mediaType: 'image', linkUrl: '', active: true })
+  const [form, setForm] = useState({ type: 'billboard', mediaUrl: '', mediaType: 'image', linkUrl: '', active: true, durationSec: 5 })
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(isEdit)
 
@@ -65,6 +65,11 @@ export default function BannerForm() {
             <input value={form.href} onChange={e => set('href', e.target.value)} style={inputStyle} placeholder="https://..." />
           </DashFormField>
         </div>
+        <DashFormField label="Tempo de exibicao" hint="Segundos que o banner fica na tela antes de trocar">
+          <select value={form.durationSec || 5} onChange={e => set('durationSec', Number(e.target.value))} style={selectStyle}>
+            {[3, 5, 8, 10, 15, 20, 30].map(s => <option key={s} value={s}>{s} segundos</option>)}
+          </select>
+        </DashFormField>
         <DashFormField label="Midia (imagem ou video)" hint="JPG, PNG, GIF, MP4">
           <ImageUpload value={form.mediaUrl} onChange={handleMediaChange} path="banners" accept="image/*,video/*" />
         </DashFormField>
