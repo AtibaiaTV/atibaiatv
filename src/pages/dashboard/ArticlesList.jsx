@@ -72,6 +72,12 @@ export default function ArticlesList() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1a1a2e' }}>Materias</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link to="/dashboard/articles/padrao" style={{
+            padding: '10px 16px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff',
+            color: '#374151', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none',
+          }}>
+            Padrao de publicacao
+          </Link>
           <Link to="/dashboard/articles/completar" style={{
             padding: '10px 16px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff',
             color: '#4971B1', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none',

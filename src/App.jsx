@@ -20,6 +20,7 @@ import DashboardHome     from './pages/dashboard/DashboardHome'
 import ArticlesList      from './pages/dashboard/ArticlesList'
 import ArticleForm       from './pages/dashboard/ArticleForm'
 import MigrateArticles   from './pages/dashboard/MigrateArticles'
+import PublishingGuide   from './pages/dashboard/PublishingGuide'
 import VideosList        from './pages/dashboard/VideosList'
 import VideoForm         from './pages/dashboard/VideoForm'
 import TickerManager     from './pages/dashboard/TickerManager'
@@ -88,6 +89,7 @@ export default function App() {
           <Route path="/dashboard/articles"     element={<ArticlesList />} />
           <Route path="/dashboard/articles/new" element={<ArticleForm />} />
           <Route path="/dashboard/articles/completar" element={<MigrateArticles />} />
+          <Route path="/dashboard/articles/padrao" element={<PublishingGuide />} />
           <Route path="/dashboard/articles/:id" element={<ArticleForm />} />
           <Route path="/dashboard/videos"       element={<VideosList />} />
           <Route path="/dashboard/videos/new"   element={<VideoForm />} />
