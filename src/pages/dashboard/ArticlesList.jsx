@@ -71,12 +71,20 @@ export default function ArticlesList() {
     <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1a1a2e' }}>Materias</h1>
-        <Link to="/dashboard/articles/new" style={{
-          padding: '10px 20px', borderRadius: 8, background: '#4971B1', color: '#fff',
-          fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', transition: 'background .15s',
-        }}>
-          + Nova Materia
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link to="/dashboard/articles/completar" style={{
+            padding: '10px 16px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff',
+            color: '#4971B1', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none',
+          }}>
+            Completar materias antigas
+          </Link>
+          <Link to="/dashboard/articles/new" style={{
+            padding: '10px 20px', borderRadius: 8, background: '#4971B1', color: '#fff',
+            fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', transition: 'background .15s',
+          }}>
+            + Nova Materia
+          </Link>
+        </div>
       </div>
       <DashTable
         columns={COLUMNS(acessos)}
