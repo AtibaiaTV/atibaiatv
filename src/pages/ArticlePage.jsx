@@ -10,6 +10,7 @@ import { trackPageView, usePageViewCount } from '../hooks/usePageViews'
 import NewsCard from '../components/NewsCard'
 import AdBanner from '../components/AdBanner'
 import BannerCarousel from '../components/BannerCarousel'
+import ArticleHeader from '../components/ArticleHeader'
 import VideoCard from '../components/VideoCard'
 
 export default function ArticlePage() {
@@ -65,32 +66,35 @@ export default function ArticlePage() {
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 300 }}>{news.title}</span>
           </nav>
 
-          <span style={{ display: 'inline-block', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, marginBottom: 14, background: tagStyle.bg, color: tagStyle.color }}>
-            {news.category}
-          </span>
-          <h1 style={{ fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', fontWeight: 700, color: 'var(--text)', lineHeight: 1.3, marginBottom: '1rem' }}>{news.title}</h1>
+          <ArticleHeader news={news} tagStyle={tagStyle} views={views} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: tagStyle.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.85rem', color: tagStyle.color, flexShrink: 0 }}>
-              {(news.author || 'R')[0]}
-            </div>
-            <div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)' }}>{news.author || 'Redacao Atibaia TV'}</div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>{views} visualizacoes</div>
-            </div>
-          </div>
+          <figure style={{ margin: '0 0 1.75rem' }}>
+            {news.thumbnailUrl ? (
+              <img src={news.thumbnailUrl} alt={news.imageCaption || news.title} style={{ width: '100%', height: 'auto', maxHeight: 460, borderRadius: 10, objectFit: 'cover', display: 'block' }} />
+            ) : (
+              <div style={{ width: '100%', height: 240, borderRadius: 10, background: CARD_BG[news.color] || CARD_BG.blue, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ opacity: 0.3, fontSize: '0.75rem', color: tagStyle.color }}>Foto: Atibaia TV</span>
+              </div>
+            )}
+            {(news.imageCaption || news.imageCredit) && (
+              <figcaption style={{ fontSize: '0.78rem', lineHeight: 1.5, color: 'var(--muted)', marginTop: 8 }}>
+                {news.imageCaption}
+                {news.imageCaption && news.imageCredit ? ' - ' : ''}
+                {news.imageCredit && <span style={{ fontStyle: 'italic' }}>Foto: {news.imageCredit}</span>}
+              </figcaption>
+            )}
+          </figure>
 
-          {news.thumbnailUrl ? (
-            <img src={news.thumbnailUrl} alt={news.title} style={{ width: '100%', height: 'auto', maxHeight: 400, borderRadius: 10, marginBottom: '1.5rem', objectFit: 'cover' }} />
-          ) : (
-            <div style={{ width: '100%', height: 240, borderRadius: 10, marginBottom: '1.5rem', background: CARD_BG[news.color] || CARD_BG.blue, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ opacity: 0.3, fontSize: '0.75rem', color: tagStyle.color }}>Foto: Atibaia TV</span>
-            </div>
-          )}
-
-          <div style={{ fontSize: '1rem', lineHeight: 1.8, color: '#374151' }}>
-            {(news.body || '').split('\n\n').map((para, i) => (
-              <p key={i} style={{ marginBottom: '1.25rem' }}>{para}</p>
+          {/* corpo: linhas iniciadas por "## " viram intertitulos, como no G1 */}
+          <div style={{ fontSize: '1.05rem', lineHeight: 1.8, color: '#2b2b3a' }}>
+            {(news.body || '').split(/\n\s*\n/).map((para, i) => (
+              para.trim().indexOf('## ') === 0 ? (
+                <h2 key={i} style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '1.3rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1.35, margin: '2rem 0 0.9rem' }}>
+                  {para.trim().slice(3)}
+                </h2>
+              ) : (
+                <p key={i} style={{ marginBottom: '1.35rem' }}>{para}</p>
+              )
             ))}
           </div>
 

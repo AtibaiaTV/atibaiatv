@@ -14,8 +14,10 @@ export default function ArticleForm() {
   const isEdit = Boolean(id)
 
   const [form, setForm] = useState({
-    title: '', category: 'Notícias', author: 'Redacao Atibaia TV',
+    title: '', subtitle: '', summary: '', category: 'Notícias',
+    author: 'Redacao Atibaia TV', location: 'Atibaia',
     body: '', featured: false, color: 'blue', thumbnailUrl: '',
+    imageCaption: '', imageCredit: '',
   })
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(isEdit)
@@ -39,6 +41,7 @@ export default function ArticleForm() {
         await updateDoc(doc(db, 'articles', id), data)
       } else {
         data.createdAt = serverTimestamp()
+        data.publishedAt = serverTimestamp()
         await addDoc(collection(db, 'articles'), data)
       }
       navigate('/dashboard/articles')
@@ -63,6 +66,14 @@ export default function ArticleForm() {
           <input value={form.title} onChange={e => set('title', e.target.value)} required style={inputStyle} placeholder="Titulo da materia" />
         </DashFormField>
 
+        <DashFormField label="Subtitulo" hint="Linha fina exibida abaixo do titulo, como no G1">
+          <textarea value={form.subtitle} onChange={e => set('subtitle', e.target.value)} style={{ ...textareaStyle, minHeight: 70 }} placeholder="Resuma a materia em uma ou duas frases" />
+        </DashFormField>
+
+        <DashFormField label="Resumo (Ver resumo)" hint="Um topico por linha; aparece na caixa retratil no topo da materia">
+          <textarea value={form.summary} onChange={e => set('summary', e.target.value)} style={{ ...textareaStyle, minHeight: 90 }} placeholder={'Primeiro ponto principal\nSegundo ponto principal'} />
+        </DashFormField>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
           <DashFormField label="Editoria">
             <select value={form.category} onChange={e => set('category', e.target.value)} style={selectStyle}>
@@ -74,6 +85,10 @@ export default function ArticleForm() {
             <input value={form.author} onChange={e => set('author', e.target.value)} style={inputStyle} />
           </DashFormField>
 
+          <DashFormField label="Cidade / local">
+            <input value={form.location} onChange={e => set('location', e.target.value)} style={inputStyle} placeholder="Atibaia" />
+          </DashFormField>
+
           <DashFormField label="Cor do card">
             <select value={form.color} onChange={e => set('color', e.target.value)} style={selectStyle}>
               {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -81,13 +96,22 @@ export default function ArticleForm() {
           </DashFormField>
         </div>
 
-        <DashFormField label="Texto da materia">
+        <DashFormField label="Texto da materia" hint={'Linha em branco separa paragrafos. Comece uma linha com "## " para criar um intertitulo.'}>
           <textarea value={form.body} onChange={e => set('body', e.target.value)} required style={textareaStyle} placeholder="Escreva o conteudo da materia..." />
         </DashFormField>
 
         <DashFormField label="Imagem de capa" hint="Arraste ou clique para enviar">
           <ImageUpload value={form.thumbnailUrl} onChange={url => set('thumbnailUrl', url)} path="articles" accept="image/*" />
         </DashFormField>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+          <DashFormField label="Legenda da foto">
+            <input value={form.imageCaption} onChange={e => set('imageCaption', e.target.value)} style={inputStyle} placeholder="Descreva a imagem" />
+          </DashFormField>
+          <DashFormField label="Credito da foto">
+            <input value={form.imageCredit} onChange={e => set('imageCredit', e.target.value)} style={inputStyle} placeholder="Atibaia TV" />
+          </DashFormField>
+        </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
