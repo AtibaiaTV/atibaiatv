@@ -4,6 +4,9 @@ import { useState } from 'react'
    chapeu da editoria, titulo em cor da editoria, subtitulo, assinatura com
    data, botoes de compartilhamento e caixa "Ver resumo" retratil. */
 
+/* diferenca minima entre publicacao e edicao pra exibir "Atualizado em" */
+var MIN_UPDATE_GAP_MS = 30 * 60 * 1000
+
 /* aceita Timestamp do Firestore, Date ou string */
 function toDate(value) {
   if (!value) return null
@@ -53,9 +56,17 @@ export default function ArticleHeader({ news, tagStyle, views }) {
   var shareText = encodeURIComponent(news.title || '')
   var shareUrl = encodeURIComponent(pageUrl)
 
-  var published = formatDate(news.publishedAt || news.createdAt)
-  var updated = formatDate(news.updatedAt)
-  var showUpdated = updated && updated !== published
+  var publishedDate = toDate(news.publishedAt || news.createdAt)
+  var updatedDate = toDate(news.updatedAt)
+  var published = formatDate(publishedDate)
+  var updated = formatDate(updatedDate)
+
+  /* "Atualizado em" so entra quando a edicao foi bem depois da publicacao;
+     ajustes feitos logo apos publicar nao contam como atualizacao */
+  var showUpdated = Boolean(
+    updated && publishedDate &&
+    (updatedDate - publishedDate) > MIN_UPDATE_GAP_MS
+  )
 
   return (
     <header>
