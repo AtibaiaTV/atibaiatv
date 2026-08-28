@@ -71,7 +71,8 @@ export default function BannerCarousel({ banners, width, height, type }) {
   }
 
   var banner = list[active]
-  var linkHref = banner.linkUrl || '#'
+  /* o painel grava o destino em href; linkUrl fica como alternativa antiga */
+  var linkHref = banner.href || banner.linkUrl || '#'
   var isInternal = linkHref.charAt(0) === '/'
 
   var containerStyle = size
@@ -84,7 +85,7 @@ export default function BannerCarousel({ banners, width, height, type }) {
 
   var slide
   if (banner.mediaType === 'video') {
-    slide = (
+    var video = (
       <video
         key={banner.id}
         src={banner.mediaUrl}
@@ -92,6 +93,11 @@ export default function BannerCarousel({ banners, width, height, type }) {
         style={mediaStyle}
       />
     )
+    slide = linkHref === '#'
+      ? video
+      : isInternal
+        ? <Link key={banner.id} to={linkHref} style={{ display: 'block' }}>{video}</Link>
+        : <a key={banner.id} href={linkHref} target="_blank" rel="noopener noreferrer sponsored" style={{ display: 'block' }}>{video}</a>
   } else if (isInternal) {
     slide = (
       <Link key={banner.id} to={linkHref} style={{ display: 'block', width: size ? 'auto' : '100%', height: size ? 'auto' : '100%' }}>

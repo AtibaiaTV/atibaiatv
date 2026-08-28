@@ -10,7 +10,7 @@ export default function BannerForm() {
   const navigate = useNavigate()
   const isEdit = Boolean(id)
 
-  const [form, setForm] = useState({ type: 'billboard', mediaUrl: '', mediaType: 'image', linkUrl: '', active: true, durationSec: 5 })
+  const [form, setForm] = useState({ type: 'billboard', mediaUrl: '', mediaType: 'image', href: '', active: true, durationSec: 5 })
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(isEdit)
 
@@ -62,7 +62,7 @@ export default function BannerForm() {
             </select>
           </DashFormField>
           <DashFormField label="Link (href)">
-            <input value={form.href} onChange={e => set('href', e.target.value)} style={inputStyle} placeholder="https://..." />
+            <input value={form.href || ''} onChange={e => set('href', e.target.value)} style={inputStyle} placeholder="https://..." />
           </DashFormField>
         </div>
         <DashFormField label="Tempo de exibicao" hint="Segundos que o banner fica na tela antes de trocar">
