@@ -42,7 +42,7 @@ function ShareButton({ label, href, color, children }) {
   )
 }
 
-export default function ArticleHeader({ news, tagStyle, views }) {
+export default function ArticleHeader({ news, tagStyle, views, shareUrl: pageUrl }) {
   var openState = useState(false)
   var open = openState[0]
   var setOpen = openState[1]
@@ -52,9 +52,8 @@ export default function ArticleHeader({ news, tagStyle, views }) {
     .map(function (l) { return l.replace(/^\s*[-*•]\s*/, '').trim() })
     .filter(Boolean)
 
-  var pageUrl = typeof window !== 'undefined' ? window.location.href : ''
   var shareText = encodeURIComponent(news.title || '')
-  var shareUrl = encodeURIComponent(pageUrl)
+  var shareUrl = encodeURIComponent(pageUrl || (typeof window !== 'undefined' ? window.location.href : ''))
 
   var publishedDate = toDate(news.publishedAt || news.createdAt)
   var updatedDate = toDate(news.updatedAt)

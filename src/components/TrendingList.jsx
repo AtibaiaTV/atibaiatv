@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { articleUrl } from '../utils/slugify'
 
 var abaStyle = function(ativa) {
   return {
@@ -25,7 +26,7 @@ export default function TrendingList({ items, aba, onTrocarAba, vazio }) {
       <div>
         {(items || []).map(function(news, i) {
           return (
-            <Link key={news.id} to={'/artigo/' + news.id} style={{
+            <Link key={news.id} to={articleUrl(news)} style={{
               display: 'flex', alignItems: 'center', gap: 12, padding: '0.85rem 1.1rem',
               textDecoration: 'none', borderBottom: i < items.length - 1 ? '1px solid #f3f4f6' : 'none',
               transition: 'background .15s',

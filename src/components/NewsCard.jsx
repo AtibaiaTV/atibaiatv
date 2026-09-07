@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { TAG_STYLES } from '../data'
 import timeAgo from '../utils/timeAgo'
+import { articleUrl } from '../utils/slugify'
 
 const CARD_BG = {
   blue: '#eef3fa', green: '#edf7e8', orange: '#fff7e0',
@@ -18,7 +19,7 @@ function MetaLine({ news }) {
 
 function Thumb({ news, tagStyle, style }) {
   return news.thumbnailUrl ? (
-    <img src={news.thumbnailUrl} alt="" style={style} />
+    <img src={news.thumbnailUrl} alt={news.imageCaption || news.title} style={style} />
   ) : (
     <div style={{ ...style, background: CARD_BG[news.color] || CARD_BG.blue, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <span style={{ fontSize: '1.8rem', opacity: 0.3, color: tagStyle.color }}>📰</span>
@@ -31,7 +32,7 @@ export default function NewsCard({ news, featured = false, highlight = false }) 
 
   if (featured) {
     return (
-      <Link to={'/artigo/' + news.id} style={{ display: 'block', textDecoration: 'none', background: '#fff' }}>
+      <Link to={articleUrl(news)} style={{ display: 'block', textDecoration: 'none', background: '#fff' }}>
         <div style={{ width: '100%', height: 320, overflow: 'hidden', position: 'relative' }}>
           <Thumb news={news} tagStyle={tagStyle} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,.8))', padding: '3rem 1.25rem 1.25rem' }}>
@@ -49,7 +50,7 @@ export default function NewsCard({ news, featured = false, highlight = false }) 
   /* variante "destaque": card largo, imagem em cima, usado para quebrar a monotonia da lista */
   if (highlight) {
     return (
-      <Link to={'/artigo/' + news.id} style={{
+      <Link to={articleUrl(news)} style={{
         display: 'block', textDecoration: 'none', background: '#fff',
         borderBottom: '1px solid #f3f4f6', position: 'relative',
       }}
@@ -73,7 +74,7 @@ export default function NewsCard({ news, featured = false, highlight = false }) 
   }
 
   return (
-    <Link to={'/artigo/' + news.id} style={{
+    <Link to={articleUrl(news)} style={{
       display: 'flex', gap: 16, padding: '1.1rem 1.25rem', background: '#fff',
       textDecoration: 'none', transition: 'background .15s', borderBottom: '1px solid #f3f4f6',
       borderLeft: '3px solid transparent',

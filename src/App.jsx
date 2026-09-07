@@ -1,4 +1,5 @@
 import { Routes, Route, Outlet } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import TopBar    from './components/TopBar'
 import Header    from './components/Header'
 import Ticker    from './components/Ticker'
@@ -49,7 +50,26 @@ function PublicLayout() {
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      {/* defaults do site inteiro; paginas de artigo sobrescrevem com o
+          proprio Helmet em ArticlePage.jsx */}
+      <Helmet>
+        <title>Atibaia TV — A TV da sua cidade</title>
+        <meta name="description" content="Atibaia TV — Notícias, cultura, eventos e esportes de Atibaia e região. Afiliada Rede Redesa." />
+        <meta name="keywords" content="Atibaia, TV, notícias, cultura, eventos, esportes, turismo, Redesa" />
+        <link rel="canonical" href="https://www.atibaiatv.com.br" />
+        <meta property="og:title" content="Atibaia TV" />
+        <meta property="og:description" content="A TV da sua cidade. Notícias, cultura, eventos e esportes de Atibaia e região." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.atibaiatv.com.br" />
+        <meta property="og:site_name" content="Atibaia TV" />
+        <meta property="og:image" content="https://www.atibaiatv.com.br/logo.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Atibaia TV" />
+        <meta name="twitter:description" content="A TV da sua cidade. Notícias, cultura, eventos e esportes de Atibaia e região." />
+        <meta name="twitter:image" content="https://www.atibaiatv.com.br/logo.png" />
+      </Helmet>
+      <Routes>
       {/* Public site */}
       <Route element={<PublicLayout />}>
         <Route path="/"           element={<Home />} />
@@ -75,6 +95,7 @@ export default function App() {
         <Route path="/ranking"   element={<Ranking />} />
         <Route path="/mural"     element={<Mural />} />
         <Route path="/artigo/:id" element={<ArticlePage />} />
+        <Route path="/artigo/:id/:slug" element={<ArticlePage />} />
         <Route path="/sobre"      element={<SobrePage />} />
         <Route path="/anuncie"    element={<AnunciePage />} />
         <Route path="/contato"    element={<ContatoPage />} />
@@ -104,6 +125,7 @@ export default function App() {
           <Route path="/dashboard/fiscal"       element={<Fiscal />} />
         </Route>
       </Route>
-    </Routes>
+      </Routes>
+    </>
   )
 }

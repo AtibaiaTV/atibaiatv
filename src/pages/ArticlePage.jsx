@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { TAG_STYLES } from '../data'
@@ -12,6 +13,26 @@ import AdBanner from '../components/AdBanner'
 import BannerCarousel from '../components/BannerCarousel'
 import ArticleHeader from '../components/ArticleHeader'
 import VideoCard from '../components/VideoCard'
+import { articleUrl } from '../utils/slugify'
+
+const SITE_URL = 'https://www.atibaiatv.com.br'
+
+/* remove os intertitulos "## " e corta num tamanho bom pra meta description */
+function excerptFromBody(body, max = 160) {
+  const text = (body || '')
+    .replace(/^\s*##\s+/gm, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (text.length <= max) return text
+  return text.slice(0, max - 1).replace(/\s+\S*$/, '') + '…'
+}
+
+/* aceita Timestamp do Firestore, Date ou string */
+function toIsoDate(value) {
+  if (!value) return null
+  const d = typeof value.toDate === 'function' ? value.toDate() : new Date(value)
+  return isNaN(d.getTime()) ? null : d.toISOString()
+}
 
 export default function ArticlePage() {
   const { id } = useParams()
@@ -50,8 +71,53 @@ export default function ArticlePage() {
     teal: 'linear-gradient(135deg, #e6f7f5, #a8e0d8)',
   }
 
+  const pageTitle = news.title + ' - Atibaia TV'
+  const description = news.subtitle || excerptFromBody(news.body) || 'A TV da sua cidade. Noticias, cultura, eventos e esportes de Atibaia e regiao.'
+  const canonicalUrl = SITE_URL + articleUrl(news)
+  const imageUrl = news.thumbnailUrl || SITE_URL + '/logo.png'
+  const publishedIso = toIsoDate(news.publishedAt || news.createdAt)
+  const modifiedIso = toIsoDate(news.updatedAt) || publishedIso
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: news.title,
+    description,
+    image: [imageUrl],
+    datePublished: publishedIso || undefined,
+    dateModified: modifiedIso || undefined,
+    author: { '@type': 'Person', name: news.author || 'Redacao Atibaia TV' },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Atibaia TV',
+      logo: { '@type': 'ImageObject', url: SITE_URL + '/logos/logo-icon.png' },
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+    articleSection: news.category,
+  }
+
   return (
     <>
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={description} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:title" content={news.title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:image" content={imageUrl} />
+        <meta property="og:site_name" content="Atibaia TV" />
+        {publishedIso && <meta property="article:published_time" content={publishedIso} />}
+        {modifiedIso && <meta property="article:modified_time" content={modifiedIso} />}
+        <meta property="article:section" content={news.category} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={news.title} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={imageUrl} />
+        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+      </Helmet>
+
       {billboardBanners.length > 0 && (
         <div className="atv-banner-wrap" style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderBottom: '1px solid #e5e7eb' }}>
           <BannerCarousel type="billboard" banners={billboardBanners} />
@@ -66,7 +132,7 @@ export default function ArticlePage() {
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 300 }}>{news.title}</span>
           </nav>
 
-          <ArticleHeader news={news} tagStyle={tagStyle} views={views} />
+          <ArticleHeader news={news} tagStyle={tagStyle} views={views} shareUrl={canonicalUrl} />
 
           <figure style={{ margin: '0 0 1.75rem' }}>
             {news.thumbnailUrl ? (
