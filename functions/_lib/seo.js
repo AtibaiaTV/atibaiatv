@@ -112,6 +112,7 @@ export function renderArticleHtml(article) {
     '<meta charset="UTF-8">\n' +
     '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
     '<title>' + escapeHtml(title) + '</title>\n' +
+    '<meta name="robots" content="max-image-preview:large">\n' +
     '<meta name="description" content="' + escapeHtml(description) + '">\n' +
     '<link rel="canonical" href="' + escapeHtml(canonicalUrl) + '">\n' +
     '<meta property="og:title" content="' + escapeHtml(article.title) + '">\n' +

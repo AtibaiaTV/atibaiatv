@@ -55,6 +55,9 @@ export default function App() {
           proprio Helmet em ArticlePage.jsx */}
       <Helmet>
         <title>Atibaia TV — A TV da sua cidade</title>
+        {/* sem isso o Google pode limitar o tamanho da imagem no preview do
+            Discover/busca, mesmo com fotos grandes nas materias */}
+        <meta name="robots" content="max-image-preview:large" />
         <meta name="description" content="Atibaia TV — Notícias, cultura, eventos e esportes de Atibaia e região. Afiliada Rede Redesa." />
         <meta name="keywords" content="Atibaia, TV, notícias, cultura, eventos, esportes, turismo, Redesa" />
         <link rel="canonical" href="https://www.atibaiatv.com.br" />
