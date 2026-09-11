@@ -24,6 +24,12 @@ const API = '/api/social-insights'
 
 const fmt = n => (typeof n === 'number' ? n.toLocaleString('pt-BR') : '—')
 
+/* A Meta devolve tempo de exibicao em milissegundos. Em horas o numero fica
+   legivel e comparavel com o que o YouTube Studio mostra. */
+const horas = ms => (typeof ms === 'number'
+  ? Math.round(ms / 3600000).toLocaleString('pt-BR') + ' h'
+  : '—')
+
 const quando = iso => {
   if (!iso) return null
   const d = new Date(iso)
@@ -79,15 +85,20 @@ export default function RedesSociaisCard() {
      estourar o tempo da borda, entao quem emenda os pedacos e esta funcao */
   async function varrer(rede) {
     let cursor = null, total = 0, publicacoes = 0, semMetrica = 0, de = null, metrica = null, voltas = 0
+    let totalTempo = null, metricaTempo = null
     do {
       const r = await chamar({ modo: 'publicacoes', rede, cursor })
       total += r.total; publicacoes += r.publicacoes; semMetrica += r.semMetrica
       metrica = r.metrica
+      if (typeof r.totalTempo === 'number') {
+        totalTempo = (totalTempo || 0) + r.totalTempo
+        metricaTempo = r.metricaTempo
+      }
       if (r.maisAntigo && (!de || r.maisAntigo < de)) de = r.maisAntigo
       cursor = r.proximoCursor
       setProgresso(rede + ': ' + fmt(total) + ' em ' + publicacoes + ' publicações')
     } while (cursor && ++voltas < 200)
-    return { total, publicacoes, semMetrica, metrica, desde: de ? de.slice(0, 10) : null }
+    return { total, publicacoes, semMetrica, metrica, totalTempo, metricaTempo, desde: de ? de.slice(0, 10) : null }
   }
 
   async function varreduraCompleta() {
@@ -137,13 +148,18 @@ export default function RedesSociaisCard() {
 
       {dados && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
             <Metrica rotulo="Seguidores no Facebook" valor={fmt(fb.seguidores)} />
-            <Metrica rotulo="Seguidores no Instagram" valor={fmt(ig.seguidores)} />
             <Metrica rotulo="Visualizações de vídeo no Facebook" valor={fmt(fb.total)}
               nota={fb.desde && 'desde ' + fb.desde} />
+            <Metrica rotulo="Tempo de exibição no Facebook" valor={horas(fb.totalTempo)}
+              nota={typeof fb.totalTempo !== 'number' ? 'não disponível' : 'apenas vídeo'} />
+
+            <Metrica rotulo="Seguidores no Instagram" valor={fmt(ig.seguidores)} />
             <Metrica rotulo="Visualizações no Instagram" valor={fmt(ig.total)}
               nota={ig.desde && 'desde ' + ig.desde} />
+            <Metrica rotulo="Tempo de exibição no Instagram" valor={horas(ig.totalTempo)}
+              nota={typeof ig.totalTempo !== 'number' ? 'não disponível' : 'apenas reels'} />
           </div>
 
           <div style={{ marginTop: '1rem', fontSize: '0.7rem', color: '#6b7280', lineHeight: 1.6 }}>

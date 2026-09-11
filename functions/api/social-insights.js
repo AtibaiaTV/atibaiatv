@@ -47,6 +47,16 @@ const CANDIDATAS = {
   facebook: ['views', 'post_impressions', 'post_impressions_unique', 'post_video_views'],
 }
 
+/* Tempo de exibicao, somado junto com as visualizacoes na mesma varredura para
+   nao dobrar as chamadas. So metrica de TOTAL entra aqui: media por publicacao
+   nao pode ser somada. No Instagram o tempo existe apenas para reels, entao o
+   numero cobre parte do conteudo — o retorno diz quantas publicacoes ficaram
+   sem o dado. Ausencia de tempo nao interrompe a coleta de visualizacoes. */
+const CANDIDATAS_TEMPO = {
+  instagram: ['ig_reels_video_view_total_time', 'video_view_total_time'],
+  facebook: ['post_video_view_time'],
+}
+
 const BORDA = { instagram: '/media', facebook: '/posts' }
 
 const json = (body, status = 200) =>
@@ -88,8 +98,15 @@ async function graphGet(path, params) {
 /* le o valor de uma metrica vinda por expansao de campo. A Meta devolve o node
    sem a chave "insights" quando nao consegue calcular aquela publicacao, entao
    ausencia aqui significa "sem dado", nao zero */
-function valorInsight(node) {
-  const serie = node.insights && node.insights.data && node.insights.data[0]
+/* Com duas metricas pedidas a Meta devolve uma serie por nome, e o casamento
+   tem de ser por nome: aceitar "a unica serie que veio" atribuiria tempo de
+   exibicao ao campo de visualizacoes quando uma das duas faltasse. O atalho so
+   vale quando pedimos uma metrica sozinha, onde nao ha o que confundir. */
+function valorInsight(node, nome, metricaUnica) {
+  const lista = node.insights && node.insights.data
+  if (!lista || !lista.length) return null
+  const porNome = nome && lista.find(d => d.name === nome)
+  const serie = porNome || (metricaUnica && lista.length === 1 ? lista[0] : null)
   if (!serie || !serie.values || !serie.values[0]) return null
   const v = serie.values[0].value
   return typeof v === 'number' ? v : null
@@ -105,7 +122,7 @@ function valorInsight(node) {
    Pedindo a borda /insights direto na publicacao o erro vem explicito — (#10)
    ou (#200) para falta de permissao, (#100) para nome de metrica invalido —
    que e o que o diagnostico precisa mostrar. */
-async function descobrirMetrica(id, rede, token) {
+async function descobrirMetrica(id, rede, token, candidatas = CANDIDATAS[rede]) {
   const amostra = await graphGet('/' + id + BORDA[rede], { fields: 'id', limit: '1', access_token: token })
   if (amostra.erro) return { erro: amostra.erro, tentativas: {} }
 
@@ -113,7 +130,7 @@ async function descobrirMetrica(id, rede, token) {
   if (!primeira) return { erro: 'nenhuma publicacao encontrada para testar', tentativas: {} }
 
   const tentativas = {}
-  for (const metrica of CANDIDATAS[rede]) {
+  for (const metrica of candidatas) {
     const r = await graphGet('/' + primeira.id + '/insights', { metric: metrica, access_token: token })
     if (!r.erro && r.data && r.data.data && r.data.data.length) return { metrica, tentativas }
     tentativas[metrica] = r.erro || 'aceita, porem sem valor devolvido'
@@ -121,7 +138,7 @@ async function descobrirMetrica(id, rede, token) {
   return { erro: 'nenhuma metrica aceita', tentativas }
 }
 
-function acumular(resumo, quando, valor, chave) {
+function acumular(resumo, quando, valor, chave, tempo) {
   if (quando) {
     if (!resumo.maisAntigo || quando < resumo.maisAntigo) resumo.maisAntigo = quando
     if (!resumo.maisRecente || quando > resumo.maisRecente) resumo.maisRecente = quando
@@ -130,6 +147,11 @@ function acumular(resumo, quando, valor, chave) {
   resumo.porTipo[chave] = (resumo.porTipo[chave] || 0) + 1
   if (valor === null) resumo.semMetrica += 1
   else resumo.total += valor
+
+  if (resumo.metricaTempo) {
+    if (tempo === null || tempo === undefined) resumo.semTempo += 1
+    else resumo.totalTempo += tempo
+  }
 }
 
 /* Instagram traz as publicacoes do feed em /media (posts, reels, carrosseis) e
@@ -149,16 +171,24 @@ async function coletar(rede, id, token, cursor, maxPaginas) {
   const achada = await descobrirMetrica(id, rede, token)
   if (achada.erro) return { erro: achada.erro, tentativas: achada.tentativas }
 
+  /* tempo e opcional: se a rede nao oferecer, a varredura segue so com as
+     visualizacoes em vez de falhar */
+  const tempo = await descobrirMetrica(id, rede, token, CANDIDATAS_TEMPO[rede])
+
   const resumo = {
     rede, metrica: achada.metrica, total: 0, publicacoes: 0,
     semMetrica: 0, porTipo: {}, maisAntigo: null, maisRecente: null,
+    metricaTempo: tempo.metrica || null,
+    totalTempo: tempo.metrica ? 0 : null,
+    semTempo: tempo.metrica ? 0 : null,
   }
+  const metricas = achada.metrica + (tempo.metrica ? ',' + tempo.metrica : '')
   let after = cursor || null
   let paginas = 0
 
   while (paginas < maxPaginas) {
     const params = {
-      fields: CAMPOS[rede] + ',insights.metric(' + achada.metrica + ')',
+      fields: CAMPOS[rede] + ',insights.metric(' + metricas + ')',
       limit: String(POR_PAGINA),
       access_token: token,
     }
@@ -169,7 +199,9 @@ async function coletar(rede, id, token, cursor, maxPaginas) {
 
     const itens = data.data || []
     for (const node of itens) {
-      acumular(resumo, quando(rede, node), valorInsight(node), tipo(rede, node))
+      acumular(resumo, quando(rede, node),
+        valorInsight(node, achada.metrica, !tempo.metrica), tipo(rede, node),
+        tempo.metrica ? valorInsight(node, tempo.metrica, false) : undefined)
     }
 
     paginas += 1
@@ -209,9 +241,10 @@ async function diagnostico(env) {
     out.pagina = r.erro ? { erro: r.erro } : r.data
 
     const m = await descobrirMetrica(pageId, 'facebook', token)
+    const t = await descobrirMetrica(pageId, 'facebook', token, CANDIDATAS_TEMPO.facebook)
     out.insightsFacebook = m.erro
       ? { ok: false, erro: m.erro, tentativas: m.tentativas }
-      : { ok: true, metrica: m.metrica }
+      : { ok: true, metrica: m.metrica, tempo: t.metrica || null, tempoTentativas: t.metrica ? undefined : t.tentativas }
   }
 
   if (igUserId) {
@@ -219,9 +252,10 @@ async function diagnostico(env) {
     out.instagram = r.erro ? { erro: r.erro } : r.data
 
     const m = await descobrirMetrica(igUserId, 'instagram', token)
+    const t = await descobrirMetrica(igUserId, 'instagram', token, CANDIDATAS_TEMPO.instagram)
     out.insightsInstagram = m.erro
       ? { ok: false, erro: m.erro, tentativas: m.tentativas }
-      : { ok: true, metrica: m.metrica }
+      : { ok: true, metrica: m.metrica, tempo: t.metrica || null, tempoTentativas: t.metrica ? undefined : t.tentativas }
   }
 
   return out
