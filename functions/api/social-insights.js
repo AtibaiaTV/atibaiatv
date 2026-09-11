@@ -37,6 +37,18 @@ const POR_PAGINA = 50
 const MAX_PAGINAS_PADRAO = 15
 const MAX_PAGINAS_TETO = 40
 
+/* A Meta aposenta e renomeia metrica de post a cada versao da Graph API — na
+   v26 "post_impressions" ja responde (#100) The value must be a valid insights
+   metric. Em vez de fixar um nome que quebra na proxima virada de versao, a
+   funcao testa os candidatos em ordem e fica com o primeiro que a API aceitar,
+   e o retorno sempre diz qual metrica acabou valendo. */
+const CANDIDATAS = {
+  instagram: ['views', 'impressions', 'reach'],
+  facebook: ['views', 'post_impressions', 'post_impressions_unique', 'post_video_views'],
+}
+
+const BORDA = { instagram: '/media', facebook: '/posts' }
+
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 
@@ -83,6 +95,23 @@ function valorInsight(node) {
   return typeof v === 'number' ? v : null
 }
 
+/* testa os candidatos pedindo uma unica publicacao e devolve o primeiro nome
+   que a API aceitar, junto com o erro de cada tentativa — no diagnostico e
+   justamente a lista de erros que mostra se falta escopo ou se o nome mudou */
+async function descobrirMetrica(id, rede, token) {
+  const tentativas = {}
+  for (const metrica of CANDIDATAS[rede]) {
+    const { erro } = await graphGet('/' + id + BORDA[rede], {
+      fields: 'id,insights.metric(' + metrica + ')',
+      limit: '1',
+      access_token: token,
+    })
+    if (!erro) return { metrica, tentativas }
+    tentativas[metrica] = erro
+  }
+  return { erro: 'nenhuma metrica aceita', tentativas }
+}
+
 function acumular(resumo, quando, valor, chave) {
   if (quando) {
     if (!resumo.maisAntigo || quando < resumo.maisAntigo) resumo.maisAntigo = quando
@@ -94,58 +123,25 @@ function acumular(resumo, quando, valor, chave) {
   else resumo.total += valor
 }
 
-/* Instagram: /media traz as publicacoes do feed (posts, reels, carrosseis).
-   "views" e a metrica unificada atual; contas ou midias antigas ainda podem so
-   responder a "impressions", por isso a segunda tentativa. */
-async function coletarInstagram(igUserId, token, cursor, maxPaginas) {
-  const resumo = {
-    rede: 'instagram', metrica: 'views', total: 0, publicacoes: 0,
-    semMetrica: 0, porTipo: {}, maisAntigo: null, maisRecente: null,
-  }
-  let metrica = 'views'
-  let after = cursor || null
-  let paginas = 0
-
-  while (paginas < maxPaginas) {
-    const params = {
-      fields: 'id,timestamp,media_type,media_product_type,insights.metric(' + metrica + ')',
-      limit: String(POR_PAGINA),
-      access_token: token,
-    }
-    if (after) params.after = after
-
-    let { data, erro } = await graphGet('/' + igUserId + '/media', params)
-
-    /* se a conta nao responde a "views", cai para "impressions" uma unica vez e
-       registra qual metrica acabou valendo */
-    if (erro && metrica === 'views' && /views|metric/i.test(erro)) {
-      metrica = 'impressions'
-      resumo.metrica = metrica
-      continue
-    }
-    if (erro) return { erro, parcial: resumo }
-
-    const itens = data.data || []
-    for (const m of itens) {
-      acumular(resumo, m.timestamp, valorInsight(m), m.media_product_type || m.media_type || 'OUTRO')
-    }
-
-    paginas += 1
-    after = data.paging && data.paging.cursors && data.paging.next
-      ? data.paging.cursors.after
-      : null
-    if (!after || !itens.length) break
-  }
-
-  return { resumo, proximoCursor: after, parcial: Boolean(after) }
+/* Instagram traz as publicacoes do feed em /media (posts, reels, carrosseis) e
+   o Facebook em /posts. Fora os campos proprios de cada rede, a varredura e a
+   mesma: paginar, ler a metrica de cada publicacao e somar. */
+const CAMPOS = {
+  instagram: 'id,timestamp,media_type,media_product_type',
+  facebook: 'id,created_time,status_type',
 }
 
-/* Facebook: /posts cobre o feed da pagina. post_impressions e o mais proximo de
-   "visualizacoes" disponivel por post; para video existe total_video_views, que
-   contamos em separado para nao misturar criterios numa soma so. */
-async function coletarFacebook(pageId, token, cursor, maxPaginas) {
+const quando = (rede, node) => (rede === 'instagram' ? node.timestamp : node.created_time)
+const tipo = (rede, node) => (rede === 'instagram'
+  ? node.media_product_type || node.media_type || 'OUTRO'
+  : node.status_type || 'OUTRO')
+
+async function coletar(rede, id, token, cursor, maxPaginas) {
+  const achada = await descobrirMetrica(id, rede, token)
+  if (achada.erro) return { erro: achada.erro, tentativas: achada.tentativas }
+
   const resumo = {
-    rede: 'facebook', metrica: 'post_impressions', total: 0, publicacoes: 0,
+    rede, metrica: achada.metrica, total: 0, publicacoes: 0,
     semMetrica: 0, porTipo: {}, maisAntigo: null, maisRecente: null,
   }
   let after = cursor || null
@@ -153,18 +149,18 @@ async function coletarFacebook(pageId, token, cursor, maxPaginas) {
 
   while (paginas < maxPaginas) {
     const params = {
-      fields: 'id,created_time,status_type,insights.metric(post_impressions)',
+      fields: CAMPOS[rede] + ',insights.metric(' + achada.metrica + ')',
       limit: String(POR_PAGINA),
       access_token: token,
     }
     if (after) params.after = after
 
-    const { data, erro } = await graphGet('/' + pageId + '/posts', params)
+    const { data, erro } = await graphGet('/' + id + BORDA[rede], params)
     if (erro) return { erro, parcial: resumo }
 
     const itens = data.data || []
-    for (const p of itens) {
-      acumular(resumo, p.created_time, valorInsight(p), p.status_type || 'OUTRO')
+    for (const node of itens) {
+      acumular(resumo, quando(rede, node), valorInsight(node), tipo(rede, node))
     }
 
     paginas += 1
@@ -190,20 +186,20 @@ async function diagnostico(env) {
     const r = await graphGet('/' + pageId, { fields: 'name,fan_count', access_token: token })
     out.pagina = r.erro ? { erro: r.erro } : r.data
 
-    const i = await graphGet('/' + pageId + '/posts', {
-      fields: 'id,insights.metric(post_impressions)', limit: '1', access_token: token,
-    })
-    out.insightsFacebook = i.erro ? { ok: false, erro: i.erro } : { ok: true }
+    const m = await descobrirMetrica(pageId, 'facebook', token)
+    out.insightsFacebook = m.erro
+      ? { ok: false, erro: m.erro, tentativas: m.tentativas }
+      : { ok: true, metrica: m.metrica }
   }
 
   if (igUserId) {
     const r = await graphGet('/' + igUserId, { fields: 'username,media_count,followers_count', access_token: token })
     out.instagram = r.erro ? { erro: r.erro } : r.data
 
-    const i = await graphGet('/' + igUserId + '/media', {
-      fields: 'id,insights.metric(views)', limit: '1', access_token: token,
-    })
-    out.insightsInstagram = i.erro ? { ok: false, erro: i.erro } : { ok: true }
+    const m = await descobrirMetrica(igUserId, 'instagram', token)
+    out.insightsInstagram = m.erro
+      ? { ok: false, erro: m.erro, tentativas: m.tentativas }
+      : { ok: true, metrica: m.metrica }
   }
 
   return out
@@ -236,20 +232,19 @@ export async function onRequestPost(context) {
   const maxPaginas = Math.min(Number(corpo.maxPaginas) || MAX_PAGINAS_PADRAO, MAX_PAGINAS_TETO)
   const rede = corpo.rede
 
-  let r
-  if (rede === 'instagram') {
-    const igUserId = env.META_IG_USER_ID
-    if (!igUserId) return json({ error: 'META_IG_USER_ID nao configurada no Cloudflare' }, 500)
-    r = await coletarInstagram(igUserId, token, corpo.cursor, maxPaginas)
-  } else if (rede === 'facebook') {
-    const pageId = env.META_PAGE_ID
-    if (!pageId) return json({ error: 'META_PAGE_ID nao configurada no Cloudflare' }, 500)
-    r = await coletarFacebook(pageId, token, corpo.cursor, maxPaginas)
-  } else {
+  const id = rede === 'instagram' ? env.META_IG_USER_ID
+    : rede === 'facebook' ? env.META_PAGE_ID
+    : null
+  if (rede !== 'instagram' && rede !== 'facebook') {
     return json({ error: 'rede deve ser instagram ou facebook' }, 400)
   }
+  if (!id) {
+    const nome = rede === 'instagram' ? 'META_IG_USER_ID' : 'META_PAGE_ID'
+    return json({ error: nome + ' nao configurada no Cloudflare' }, 500)
+  }
 
-  if (r.erro) return json({ error: r.erro, parcial: r.parcial }, 422)
+  const r = await coletar(rede, id, token, corpo.cursor, maxPaginas)
+  if (r.erro) return json({ error: r.erro, tentativas: r.tentativas, parcial: r.parcial }, 422)
 
   return json({
     modo,
