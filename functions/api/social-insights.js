@@ -227,6 +227,32 @@ async function diagnostico(env) {
   return out
 }
 
+/* Numeros baratos: seguidores e contagem de publicacoes, duas chamadas. E o que
+   o painel busca no dia a dia — a varredura por publicacao custa milhares de
+   chamadas e fica reservada para o acumulado, atualizado de vez em quando. */
+async function resumo(env) {
+  const token = env.META_ACCESS_TOKEN
+  const out = {}
+
+  if (env.META_PAGE_ID) {
+    const r = await graphGet('/' + env.META_PAGE_ID, { fields: 'name,fan_count', access_token: token })
+    out.facebook = r.erro
+      ? { erro: r.erro }
+      : { nome: r.data.name, seguidores: r.data.fan_count }
+  }
+
+  if (env.META_IG_USER_ID) {
+    const r = await graphGet('/' + env.META_IG_USER_ID, {
+      fields: 'username,followers_count,media_count', access_token: token,
+    })
+    out.instagram = r.erro
+      ? { erro: r.erro }
+      : { usuario: r.data.username, seguidores: r.data.followers_count, publicacoes: r.data.media_count }
+  }
+
+  return out
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context
 
@@ -249,7 +275,13 @@ export async function onRequestPost(context) {
     return json({ modo, ...(await diagnostico(env)) })
   }
 
-  if (modo !== 'publicacoes') return json({ error: 'modo deve ser diagnostico ou publicacoes' }, 400)
+  if (modo === 'resumo') {
+    return json({ modo, ...(await resumo(env)) })
+  }
+
+  if (modo !== 'publicacoes') {
+    return json({ error: 'modo deve ser diagnostico, resumo ou publicacoes' }, 400)
+  }
 
   const maxPaginas = Math.min(Number(corpo.maxPaginas) || MAX_PAGINAS_PADRAO, MAX_PAGINAS_TETO)
   const rede = corpo.rede

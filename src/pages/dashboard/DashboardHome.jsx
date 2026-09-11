@@ -3,6 +3,7 @@ import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
 import { db } from '../../firebase'
 import DashCard from '../../components/dashboard/DashCard'
 import MapaAcessos from '../../components/dashboard/MapaAcessos'
+import RedesSociaisCard from '../../components/dashboard/RedesSociaisCard'
 import { seedFirestore } from '../../utils/seedFirestore'
 import { Link } from 'react-router-dom'
 import { useVisitantes, useOnline, useCidades } from '../../hooks/useAnalytics'
@@ -123,6 +124,8 @@ export default function DashboardHome() {
             : 'A coleta começa a partir do primeiro acesso após esta atualização. Não guardamos IP nem dados pessoais.'}
         </p>
       </div>
+
+      <RedesSociaisCard />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
         {/* Top pages chart */}
