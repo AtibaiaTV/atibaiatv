@@ -95,19 +95,28 @@ function valorInsight(node) {
   return typeof v === 'number' ? v : null
 }
 
-/* testa os candidatos pedindo uma unica publicacao e devolve o primeiro nome
-   que a API aceitar, junto com o erro de cada tentativa — no diagnostico e
-   justamente a lista de erros que mostra se falta escopo ou se o nome mudou */
+/* Testa os candidatos e devolve o primeiro nome que a API aceitar.
+
+   A checagem NAO pode ser feita por expansao de campo (fields=insights.metric):
+   quando falta o escopo read_insights a Meta devolve 200 com a lista sem o
+   campo insights, em silencio. Isso dava "metrica aceita" e a varredura somava
+   zero por milhares de publicacoes sem nenhum aviso.
+
+   Pedindo a borda /insights direto na publicacao o erro vem explicito — (#10)
+   ou (#200) para falta de permissao, (#100) para nome de metrica invalido —
+   que e o que o diagnostico precisa mostrar. */
 async function descobrirMetrica(id, rede, token) {
+  const amostra = await graphGet('/' + id + BORDA[rede], { fields: 'id', limit: '1', access_token: token })
+  if (amostra.erro) return { erro: amostra.erro, tentativas: {} }
+
+  const primeira = amostra.data && amostra.data.data && amostra.data.data[0]
+  if (!primeira) return { erro: 'nenhuma publicacao encontrada para testar', tentativas: {} }
+
   const tentativas = {}
   for (const metrica of CANDIDATAS[rede]) {
-    const { erro } = await graphGet('/' + id + BORDA[rede], {
-      fields: 'id,insights.metric(' + metrica + ')',
-      limit: '1',
-      access_token: token,
-    })
-    if (!erro) return { metrica, tentativas }
-    tentativas[metrica] = erro
+    const r = await graphGet('/' + primeira.id + '/insights', { metric: metrica, access_token: token })
+    if (!r.erro && r.data && r.data.data && r.data.data.length) return { metrica, tentativas }
+    tentativas[metrica] = r.erro || 'aceita, porem sem valor devolvido'
   }
   return { erro: 'nenhuma metrica aceita', tentativas }
 }
@@ -164,6 +173,19 @@ async function coletar(rede, id, token, cursor, maxPaginas) {
     }
 
     paginas += 1
+
+    /* se a primeira pagina inteira voltou sem metrica nenhuma, parar aqui: seguir
+       adiante so produziria um total zero convincente ao longo de milhares de
+       publicacoes. Costuma ser escopo faltando, ja que a Meta omite o campo em
+       vez de recusar a chamada */
+    if (paginas === 1 && resumo.publicacoes && resumo.semMetrica === resumo.publicacoes) {
+      return {
+        erro: 'a pagina inteira voltou sem a metrica ' + achada.metrica
+          + ' — normalmente falta escopo de insights no token',
+        parcial: resumo,
+      }
+    }
+
     after = data.paging && data.paging.cursors && data.paging.next
       ? data.paging.cursors.after
       : null
