@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom'
+
 const THUMB_BG = {
   blue:   'linear-gradient(135deg, #c8def0 0%, #8ab8dc 100%)',
   green:  'linear-gradient(135deg, #c8eabb 0%, #8acc6e 100%)',
@@ -36,13 +38,15 @@ export default function VideoCard({ video }) {
       ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
       : null
 
+  const navigate = useNavigate()
   const handleClick = () => {
-    if (video.youtubeUrl) window.open(video.youtubeUrl, '_blank', 'noreferrer')
+    if (video.videoUrl) navigate('/video/' + video.id)
+    else if (video.youtubeUrl) window.open(video.youtubeUrl, '_blank', 'noreferrer')
   }
 
   return (
     <div
-      style={{ cursor: video.youtubeUrl ? 'pointer' : 'default' }}
+      style={{ cursor: (video.videoUrl || video.youtubeUrl) ? 'pointer' : 'default' }}
       onClick={handleClick}
       onMouseEnter={e => e.currentTarget.querySelector('.vtitle').style.color = '#4a6fa5'}
       onMouseLeave={e => e.currentTarget.querySelector('.vtitle').style.color = '#1a1a2e'}

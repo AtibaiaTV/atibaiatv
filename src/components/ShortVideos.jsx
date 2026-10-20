@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 var css = [
   '.atv-shorts-track { display:flex; gap:14px; overflow-x:auto; scroll-behavior:smooth; scroll-snap-type:x proximity; padding-bottom:4px; -ms-overflow-style:none; scrollbar-width:none; }',
@@ -32,6 +33,7 @@ function Arrow({ dir, onClick }) {
 
 export default function ShortVideos({ videos }) {
   var trackRef = useRef(null)
+  var navigate = useNavigate()
 
   if (!videos || videos.length === 0) return null
 
@@ -62,7 +64,10 @@ export default function ShortVideos({ videos }) {
             <div
               key={video.id}
               className="atv-shorts-card"
-              onClick={function() { if (video.youtubeUrl) window.open(video.youtubeUrl, '_blank', 'noreferrer') }}
+              onClick={function() {
+                if (video.videoUrl) navigate('/video/' + video.id)
+                else if (video.youtubeUrl) window.open(video.youtubeUrl, '_blank', 'noreferrer')
+              }}
             >
               {thumbSrc && <img src={thumbSrc} alt={video.title} onError={function(e) { e.currentTarget.style.display = 'none' }} />}
 

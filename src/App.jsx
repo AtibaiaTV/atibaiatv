@@ -9,7 +9,8 @@ import VLibras   from './components/VLibras'
 import Home         from './pages/Home'
 import CategoryPage from './pages/CategoryPage'
 import ArticlePage  from './pages/ArticlePage'
-import Denuncia     from './pages/Denuncia'
+import VideoPage    from './pages/VideoPage'
+import Denuncia    from './pages/Denuncia'
 import Ranking      from './pages/Ranking'
 import Mural        from './pages/Mural'
 import { SobrePage, AnunciePage, ContatoPage, PrivacidadePage } from './pages/StaticPages'
@@ -99,6 +100,7 @@ export default function App() {
         <Route path="/mural"     element={<Mural />} />
         <Route path="/artigo/:id" element={<ArticlePage />} />
         <Route path="/artigo/:id/:slug" element={<ArticlePage />} />
+        <Route path="/video/:id"  element={<VideoPage />} />
         <Route path="/sobre"      element={<SobrePage />} />
         <Route path="/anuncie"    element={<AnunciePage />} />
         <Route path="/contato"    element={<ContatoPage />} />

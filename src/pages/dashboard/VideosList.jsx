@@ -14,8 +14,10 @@ const COLUMNS = [
       : <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#4971B1', background: '#eef3fa', padding: '3px 9px', borderRadius: 12 }}>Video</span>,
   },
   {
-    key: 'youtubeUrl', label: 'YouTube',
-    render: (row) => row.youtubeUrl ? <a href={row.youtubeUrl} target="_blank" rel="noreferrer" style={{ color: '#4971B1', fontSize: '0.78rem' }}>Abrir</a> : '—',
+    key: 'youtubeUrl', label: 'Origem',
+    render: (row) => row.videoUrl
+      ? <Link to={`/video/${row.id}`} target="_blank" style={{ color: '#4971B1', fontSize: '0.78rem' }}>Arquivo · ver no site</Link>
+      : row.youtubeUrl ? <a href={row.youtubeUrl} target="_blank" rel="noreferrer" style={{ color: '#4971B1', fontSize: '0.78rem' }}>YouTube</a> : '—',
   },
   {
     key: 'createdAt', label: 'Data',
