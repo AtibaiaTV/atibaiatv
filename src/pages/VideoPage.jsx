@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { trackPageView } from '../hooks/usePageViews'
+import useBanners from '../hooks/useBanners'
+import BannerCarousel from '../components/BannerCarousel'
 
 const SITE_URL = 'https://www.atibaiatv.com.br'
 
@@ -29,6 +31,10 @@ export default function VideoPage() {
   const { id } = useParams()
   const [video, setVideo] = useState(null)
   const [loading, setLoading] = useState(true)
+  const { banners } = useBanners()
+  /* so os billboards (1920x200) cadastrados no painel; memoizado para o carrossel
+     nao reembaralhar a cada renderizacao */
+  const billboardBanners = useMemo(() => banners.filter(b => b.type === 'billboard'), [banners])
 
   useEffect(() => {
     trackPageView('video-' + id)
@@ -83,6 +89,12 @@ export default function VideoPage() {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
+      {billboardBanners.length > 0 && (
+        <div className="atv-banner-wrap" style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderBottom: '1px solid #e5e7eb' }}>
+          <BannerCarousel type="billboard" banners={billboardBanners} />
+        </div>
+      )}
+
       <div className="atv-container atv-section-pad" style={{ maxWidth: 900 }}>
         <nav style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1.25rem', fontSize: '0.78rem', color: 'var(--muted)', flexWrap: 'wrap' }}>
           <Link to="/" style={{ color: 'var(--blue)' }}>Inicio</Link>
@@ -114,6 +126,12 @@ export default function VideoPage() {
           </div>
         )}
       </div>
+
+      {billboardBanners.length > 0 && (
+        <div className="atv-banner-wrap" style={{ display: 'flex', justifyContent: 'center', background: '#f4f5f7', borderTop: '1px solid #e5e7eb' }}>
+          <BannerCarousel type="billboard" banners={billboardBanners} />
+        </div>
+      )}
     </>
   )
 }
