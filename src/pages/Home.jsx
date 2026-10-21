@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import NewsCard from '../components/NewsCard'
 import VideoCard from '../components/VideoCard'
 import ShortVideos from '../components/ShortVideos'
+import VideoCarousel from '../components/VideoCarousel'
 import TrendingList from '../components/TrendingList'
 import SidebarWidgets from '../components/SidebarWidgets'
 import EnqueteWidget from '../components/EnqueteWidget'
@@ -64,6 +65,7 @@ export default function Home() {
   var sideNews     = articles.slice(1, 4)
   var restNews     = articles.slice(4)
   var latestVideo  = videos[0] || null
+  var latestVideos = videos.slice(0, 5)
   var shortVideos  = videos.filter(function(v) { return v.format === 'short' })
   var recentes     = articles.slice(0, 6)
 
@@ -96,8 +98,12 @@ export default function Home() {
               <div style={{ background: '#e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
                 <NewsCard news={featured} featured={true} />
               </div>
+              {/* os 5 ultimos videos ocupam o lugar da enquete; sem video nenhum,
+                  a enquete continua aqui */}
               <div className="atv-featured-enquete" style={{ height: 320 }}>
-                <EnqueteWidget compact fillHeight />
+                {latestVideos.length > 0
+                  ? <VideoCarousel videos={latestVideos} />
+                  : <EnqueteWidget compact fillHeight />}
               </div>
             </div>
             <div className="atv-grid-sidenews">
@@ -166,6 +172,9 @@ export default function Home() {
 
           {/* Clima, mercado, rodovias, acessibilidade — no topo da coluna, mais visivel */}
           <SidebarWidgets />
+
+          {/* a enquete saiu do destaque para dar lugar ao carrossel de videos */}
+          {latestVideos.length > 0 && <EnqueteWidget />}
 
           {/* 1 square 300x300 rotativo */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
